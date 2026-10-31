@@ -6,6 +6,7 @@ import math
 import os
 import secrets
 import time
+import uuid
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from pathlib import Path
@@ -34,8 +35,12 @@ from .models import (
     Message,
     Cook,
     PantryImport,
+    GeneratedRecipe,
+    GenerationBudget,
 )
 from .recipes import RECIPES, UNITS, convert, amount_available, match_recipe
+from .migrations import migrate
+from . import local_ai
 
 DATABASE = os.getenv("SAVOR_DATABASE_URL", "sqlite:///./savor.db")
 DEMO = os.getenv("SAVOR_DEMO_MODE", "true").lower() == "true"
@@ -60,7 +65,7 @@ def now():
 
 
 def seed():
-    Base.metadata.create_all(engine)
+    migrate(engine)
     with Session(engine) as db, db.begin():
         if not db.get(SchemaVersion, 1):
             db.add(SchemaVersion(version=1))
@@ -360,8 +365,31 @@ def pantry(db, user_id, lock=False):
     return list(db.scalars(q.with_for_update() if lock else q))
 
 
-def recipes_for(user, items):
-    result = [match_recipe(r, items, user.servings) for r in RECIPES]
+def find_recipe(db, user_id, recipe_id):
+    builtin = next((r for r in RECIPES if r["id"] == recipe_id), None)
+    if builtin:
+        return {**builtin, "source": "curated"}
+    row = db.scalar(
+        select(GeneratedRecipe).where(
+            GeneratedRecipe.id == recipe_id, GeneratedRecipe.user_id == user_id
+        )
+    )
+    return {**json.loads(row.payload), "id": row.id} if row else None
+
+
+def recipes_for(user, items, db):
+    stored = list(
+        db.scalars(
+            select(GeneratedRecipe)
+            .where(GeneratedRecipe.user_id == user.id)
+            .order_by(GeneratedRecipe.created_at.desc())
+            .limit(12)
+        )
+    )
+    sources = [{**r, "source": "curated"} for r in RECIPES] + [
+        {**json.loads(r.payload), "id": r.id} for r in stored
+    ]
+    result = [match_recipe(r, items, user.servings) for r in sources]
     result = [
         r
         for r in result
@@ -389,7 +417,101 @@ def recipes_for(user, items):
 
 @app.get("/api/recipes")
 def get_recipes(user: User = Depends(current_user), db: Session = Depends(database)):
-    return recipes_for(user, pantry(db, user.id))
+    return recipes_for(user, pantry(db, user.id), db)
+
+
+@app.post("/api/recipes/generate")
+def generate_dinner(
+    user: User = Depends(current_user), db: Session = Depends(database)
+):
+    items = pantry(db, user.id)
+    if len(items) < 2:
+        raise HTTPException(
+            400,
+            "Add at least two pantry ingredients before asking local AI for a dinner idea.",
+        )
+    if len(items) > 80:
+        raise HTTPException(
+            400, "The local demo supports up to 80 pantry entries for AI generation."
+        )
+    context = {
+        "pantry": [
+            {
+                "name": i.name,
+                "quantity": round(i.quantity, 4),
+                "unit": i.unit,
+                "days_stored": max(
+                    0, (date.today() - date.fromisoformat(i.stored_on)).days
+                ),
+            }
+            for i in items
+        ],
+        "preferences": {
+            "servings": user.servings,
+            "diet": user.diet,
+            "max_minutes": user.max_minutes,
+        },
+    }
+    try:
+        selected_model = local_ai.model_name()
+    except local_ai.LocalAIError as exc:
+        raise HTTPException(exc.status, str(exc)) from exc
+    context_hash = hashlib.sha256(
+        json.dumps(
+            {"context": context, "model": selected_model, "prompt_version": 2},
+            sort_keys=True,
+        ).encode()
+    ).hexdigest()
+    cached = list(
+        db.scalars(
+            select(GeneratedRecipe).where(
+                GeneratedRecipe.user_id == user.id,
+                GeneratedRecipe.context_hash == context_hash,
+                GeneratedRecipe.created_at > now() - 900,
+            )
+        )
+    )
+    if cached:
+        return {"cached": True, "count": len(cached), "ids": [r.id for r in cached]}
+    # Per-account DB lock prevents competing requests from loading the model twice.
+    db.scalar(select(User).where(User.id == user.id).with_for_update())
+    budget = db.get(GenerationBudget, user.id)
+    if budget and (budget.busy_until > now() or budget.last_attempt > now() - 10):
+        raise HTTPException(
+            429, "Local AI is already working or cooling down. Please wait a moment."
+        )
+    if not budget:
+        budget = GenerationBudget(
+            user_id=user.id, last_attempt=now(), busy_until=now() + 200
+        )
+        db.add(budget)
+    else:
+        budget.last_attempt = now()
+        budget.busy_until = now() + 200
+    # Release the database transaction during the slow local model call.
+    db.commit()
+    try:
+        generated = local_ai.generate(context, items)
+    except local_ai.LocalAIError as exc:
+        budget.busy_until = 0
+        db.commit()
+        raise HTTPException(exc.status, str(exc)) from exc
+    ids = []
+    for recipe in generated:
+        recipe_id = "ai-" + uuid.uuid4().hex
+        ids.append(recipe_id)
+        db.add(
+            GeneratedRecipe(
+                id=recipe_id,
+                user_id=user.id,
+                context_hash=context_hash,
+                payload=json.dumps(recipe),
+                created_at=now(),
+            )
+        )
+    budget.busy_until = 0
+    db.flush()
+    return {"cached": False, "count": len(ids), "ids": ids}
 
 
 def take(items, name, quantity, unit):
@@ -445,7 +567,7 @@ def cook_recipe(
         if existing.recipe_id != recipe_id:
             raise HTTPException(409, "This action key belongs to another meal.")
         return {"ok": True, "already_recorded": True}
-    recipe = next((r for r in RECIPES if r["id"] == recipe_id), None)
+    recipe = find_recipe(db, user.id, recipe_id)
     if not recipe:
         raise HTTPException(404, "Recipe not found.")
     items = pantry(db, user.id, True)
@@ -484,8 +606,6 @@ class RequestInput(BaseModel):
             raise ValueError("Enter an ingredient and supported unit.")
         if (self.community_id is None) == (self.friend_id is None):
             raise ValueError("Choose one community or friend.")
-        if self.recipe_id and self.recipe_id not in [r["id"] for r in RECIPES]:
-            raise ValueError("Unknown recipe.")
         return self
 
 
@@ -562,6 +682,8 @@ def create_request(
     user: User = Depends(current_user),
     db: Session = Depends(database),
 ):
+    if data.recipe_id and not find_recipe(db, user.id, data.recipe_id):
+        raise HTTPException(404, "Recipe not found.")
     if data.community_id and not member(db, user.id, data.community_id):
         raise HTTPException(403, "Join that community first.")
     if data.friend_id and not is_friend(db, user.id, data.friend_id):
@@ -892,14 +1014,15 @@ def state(user: User = Depends(current_user), db: Session = Depends(database)):
         "shared_count": sum(
             r.status == "completed" and r.provider_id == user.id for r in rs
         ),
-        "recipes": recipes_for(user, pantry(db, user.id)),
+        "recipes": recipes_for(user, pantry(db, user.id), db),
+        "ai": local_ai.status(),
         "units": list(UNITS),
     }
 
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "mode": "local sample accounts", "schema": 1}
+    return {"ok": True, "mode": "local sample accounts", "schema": 2}
 
 
 DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"

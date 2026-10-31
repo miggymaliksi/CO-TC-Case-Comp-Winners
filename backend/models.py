@@ -122,3 +122,19 @@ class PantryImport(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     request_key = Column(String, nullable=False)
     __table_args__ = (UniqueConstraint("user_id", "request_key"),)
+
+
+class GeneratedRecipe(Base):
+    __tablename__ = "generated_recipes"
+    id = Column(String, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=False)
+    context_hash = Column(String, nullable=False)
+    payload = Column(String, nullable=False)
+    created_at = Column(Float, nullable=False)
+
+
+class GenerationBudget(Base):
+    __tablename__ = "generation_budgets"
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    last_attempt = Column(Float, nullable=False)
+    busy_until = Column(Float, nullable=False, default=0)

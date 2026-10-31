@@ -12,6 +12,16 @@ from backend.models import IngredientRequest, PantryItem
 
 @pytest.fixture
 def clients(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        main.local_ai,
+        "status",
+        lambda: {
+            "provider": "ollama",
+            "model": "qwen3:1.7b",
+            "ready": True,
+            "api_fees": False,
+        },
+    )
     engine = create_engine(
         f"sqlite:///{tmp_path}/test.db",
         connect_args={"check_same_thread": False, "timeout": 20},
@@ -299,3 +309,149 @@ def test_cook_cannot_consume_missing_ingredients(clients):
         == 409
     )
     assert stock(a, "pasta", "g") == before
+
+
+def local_response():
+    return {
+        "name": "Tomato and spinach salad",
+        "subtitle": "A quick pantry lunch.",
+        "minutes": 10,
+        "servings": 2,
+        "tags": ["Vegan", "Gluten-free"],
+        "ingredients": [
+            {"name": "tomatoes", "quantity": 300, "unit": "g"},
+            {"name": "spinach", "quantity": 50, "unit": "g"},
+            {"name": "olive oil", "quantity": 20, "unit": "ml"},
+        ],
+        "steps": [
+            "Chop the tomatoes and spinach.",
+            "Toss with olive oil and serve.",
+        ],
+    }
+
+
+def mock_model(monkeypatch, recipe=None):
+    import json, httpx
+
+    calls = []
+
+    def post(url, **kwargs):
+        calls.append((url, kwargs))
+        return httpx.Response(
+            200,
+            json={
+                "done": True,
+                "done_reason": "stop",
+                "message": {
+                    "content": json.dumps({"recipes": [recipe or local_response()]})
+                },
+            },
+        )
+
+    monkeypatch.setattr(main.local_ai.httpx, "post", post)
+    return calls
+
+
+def test_local_ai_cache_privacy_and_cooking(clients, monkeypatch):
+    a, b, _ = clients
+    calls = mock_model(monkeypatch)
+    before = stock(a, "tomatoes", "g")
+    r = a.post("/api/recipes/generate")
+    assert r.status_code == 200, r.text
+    id = r.json()["ids"][0]
+    assert stock(a, "tomatoes", "g") == before  # Generation cannot mutate pantry.
+    assert a.post("/api/recipes/generate").json()["cached"]
+    assert len(calls) == 1
+    url, args = calls[0]
+    assert url == "http://127.0.0.1:11434/api/chat"
+    assert args["trust_env"] is False and args["json"]["think"] is False
+    assert "Authorization" not in args.get("headers", {})
+    assert not any(r["id"] == id for r in state(b)["recipes"])
+    assert (
+        b.post(
+            f"/api/recipes/{id}/cook", json={"request_key": "other-user-key"}
+        ).status_code
+        == 404
+    )
+    assert (
+        b.post(
+            "/api/requests",
+            json={
+                "name": "garlic",
+                "quantity": 1,
+                "unit": "clove",
+                "community_id": 1,
+                "recipe_id": id,
+            },
+        ).status_code
+        == 404
+    )
+    assert (
+        a.post(
+            f"/api/recipes/{id}/cook", json={"request_key": "local-meal-key"}
+        ).status_code
+        == 200
+    )
+    assert stock(a, "tomatoes", "g") == before - 300
+
+
+def test_local_ai_rejects_bad_coverage_and_duplicate_lines(clients, monkeypatch):
+    a, _, _ = clients
+    bad = local_response()
+    bad["ingredients"] = [
+        {"name": "salmon", "quantity": 300, "unit": "g"},
+        {"name": "eggs", "quantity": 2, "unit": "each"},
+    ]
+    mock_model(monkeypatch, bad)
+    assert a.post("/api/recipes/generate").status_code == 422
+    assert not any(r["source"] == "local_ai" for r in state(a)["recipes"])
+    later = main.now() + 11
+    monkeypatch.setattr(main, "now", lambda: later)
+    duplicate = local_response()
+    duplicate["ingredients"].append(duplicate["ingredients"][0])
+    mock_model(monkeypatch, duplicate)
+    assert a.post("/api/recipes/generate").status_code == 422
+
+
+def test_local_ai_offline_and_cloud_models_refused(clients, monkeypatch):
+    import httpx
+
+    a, _, _ = clients
+
+    def offline(*args, **kwargs):
+        raise httpx.ConnectError("offline")
+
+    monkeypatch.setattr(main.local_ai.httpx, "post", offline)
+    assert a.post("/api/recipes/generate").status_code == 503
+    monkeypatch.setenv("SAVOR_LOCAL_MODEL", "qwen3:cloud")
+    later = main.now() + 11
+    monkeypatch.setattr(main, "now", lambda: later)
+    assert a.post("/api/recipes/generate").status_code == 503
+
+
+def test_local_ai_rejects_wrong_servings_and_preserves_database(clients, monkeypatch):
+    from backend.models import SchemaVersion
+
+    a, _, _ = clients
+    bad = local_response()
+    bad["servings"] = 8
+    mock_model(monkeypatch, bad)
+    before = state(a)["pantry"]
+    assert a.post("/api/recipes/generate").status_code == 422
+    assert state(a)["pantry"] == before
+    with Session(main.engine) as db:
+        assert db.get(SchemaVersion, 2)
+
+
+def test_local_ai_rejects_excess_oil_and_uncooked_starch(clients, monkeypatch):
+    a, _, _ = clients
+    bad = local_response()
+    bad["ingredients"][2]["quantity"] = 150
+    mock_model(monkeypatch, bad)
+    assert a.post("/api/recipes/generate").status_code == 422
+    later = main.now() + 11
+    monkeypatch.setattr(main, "now", lambda: later)
+    bad = local_response()
+    bad["ingredients"].append({"name": "pasta", "quantity": 100, "unit": "g"})
+    mock_model(monkeypatch, bad)
+    assert a.post("/api/recipes/generate").status_code == 422
