@@ -2,6 +2,28 @@
 
 Good food. Shared. A local case-competition demo for pantry tracking, quantity-aware recipes, and private ingredient sharing.
 
+## Phone-style Mac demo
+
+In VS Code, choose **Terminal → Run Task → Savor: Open phone demo**. Or enter:
+
+```sh
+python3 run.py --desktop
+```
+
+The first launch prepares the Python/interface packages and Electron window. Later launches reuse them. Savor opens in its own narrow Mac window with **Home, Pantry, Recipes, Community, and Impact** along the bottom. It starts its own local backend on an available port and closes that backend when the window closes. It starts Ollama when needed, and only stops a model service it started itself. Existing VS Code browser sessions can keep running.
+
+To create a double-clickable Mac app after that first setup:
+
+```sh
+npm run build --prefix desktop
+```
+
+Open `desktop/release/Savor-darwin-arm64/Savor.app` on an Apple silicon Mac (`Savor-darwin-x64` on an Intel build). The generated app is ignored by Git; the launcher source and locked dependencies are committed. This demo launcher uses the prepared project folder, `.venv`, `frontend/dist`, and downloaded local model. **Keep this checkout in place.** Rebuild after moving it. It is a phone-style **Mac app**, not an iPhone/Android installation or a self-contained installer for another computer. Teammates prepare and build their own checkout.
+
+The Mac app and browser version use the same local `savor.db`, so practice changes persist. Window preferences, local session cookies, and service logs are in the ignored `.desktop-data/` folder. No API key is needed. The desktop renderer has Node access disabled, context isolation and sandboxing enabled, restricted navigation, and a content security policy.
+
+Use [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md) for the live walkthrough and [docs/TECHNICAL_RUNDOWN.md](docs/TECHNICAL_RUNDOWN.md) for technical Q&A.
+
 ## Run in VS Code
 
 You need Python 3.9 or later (3.11+ recommended) and Node.js 22.12+ or 24+. Install them if missing, then reopen VS Code so it can find them.
@@ -69,7 +91,7 @@ The four curated recipes, illustrations, initial messages, accounts, and initial
 
 ## Technology and data
 
-- **Frontend:** React + Vite, with original vector food illustrations and responsive navigation. Google Fonts is optional; system fonts work offline.
+- **Frontend:** React + Vite, with original vector food illustrations and responsive navigation. The Mac demo uses an Electron window constrained to phone widths, with larger mobile text and controls. Google Fonts is optional; system fonts work offline.
 - **Backend:** FastAPI + SQLAlchemy, with input validation and authorization on the server.
 - **Database:** SQLite by default, so local setup needs no database account. PostgreSQL can be selected with `SAVOR_DATABASE_URL=postgresql+psycopg://…`. That configuration is supported by the models but has not been tested against a running PostgreSQL instance.
 - **Schema:** version 1 is the original demo. The additive version 2 migration adds private generated recipes and a generation cooldown without changing existing pantry records. Future schema changes need an explicit migration.

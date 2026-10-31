@@ -2,13 +2,14 @@
 
 ## The 30-second version
 
-Savor has three main parts: the React interface, a Python backend, and a database. The interface is what users see. The backend checks inputs, matches recipes to actual grocery quantities, and controls ingredient requests and inventory updates. The database keeps those records after the app closes. For live recipe suggestions, we use a small Qwen model through Ollama on the computer. The model proposes a recipe, but our code checks it before showing it and never lets the model change inventory directly.
+Savor runs in a phone-style Mac window built with Electron. Inside it, React displays the interface, a Python backend applies the app's rules, and SQLite saves the records. The backend matches recipes to actual grocery quantities and controls ingredient requests and inventory updates. For live recipe suggestions, we use a small Qwen model through Ollama on the computer. The model proposes a recipe, but our code checks it before showing it and never lets the model change inventory directly.
 
 ## The system diagram
 
 ```mermaid
 flowchart LR
-    U[User] --> R[React interface]
+    U[User] --> E[Electron / phone-style Mac window]
+    E --> R[React interface]
     R -->|JSON requests| P[Python / FastAPI]
     P <-->|Read and save records| D[(SQLite database)]
     P -->|Pantry and preferences| O[Ollama / local Qwen3 model]
@@ -16,12 +17,13 @@ flowchart LR
     P -->|Validated result| R
 ```
 
-The AI connection goes only to `127.0.0.1:11434` on this computer. Savor's app runs at `127.0.0.1:8000`. These are local addresses, not public websites.
+The AI connection goes only to `127.0.0.1:11434` on this computer. The Mac app starts Python on a free loopback port, waits for its health check, then loads that address inside its own window. The browser development launcher uses `127.0.0.1:8000` by default. These addresses stay on this computer.
 
 ## The parts you should be able to explain
 
 | Part | What it does | Why we chose it |
 | --- | --- | --- |
+| Electron | Opens the phone-style Mac window, starts the local Python service and closes owned services on exit | Lets us demo the existing React interface as a desktop app with a Dock icon and bottom navigation |
 | React | Displays pantry items, recipe cards, forms, requests and chats | Makes it easier to reuse interface pieces and update the screen when data changes |
 | Vite | Prepares the React interface for development and builds its browser files | Gives the team a simple development and build workflow |
 | FastAPI / Python | Receives requests, validates inputs, checks access and applies business rules | Keeps important decisions in one server instead of trusting the browser |
@@ -30,6 +32,8 @@ The AI connection goes only to `127.0.0.1:11434` on this computer. Savor's app r
 | Git / GitHub | Records versions and lets teammates review a feature branch | Keeps changes reviewable. The draft pull request is a review proposal, not a deployment |
 
 We integrated a pretrained model. We did not train our own model. The model download is about 2.5 GB. Local inference still uses memory, processing power, electricity and time. Ollama cloud features are disabled for the process started by Savor.
+
+The desktop build is a launcher for the prepared checkout on this Mac. It does not bundle Python, the database or several gigabytes of model weights. The checkout stays in place; moving it requires rebuilding the launcher. An iPhone/Android build and a portable, signed installer are later packaging work. The underlying interface is responsive, but this demo does not claim installation on a real phone.
 
 ## Follow one request through the app
 
