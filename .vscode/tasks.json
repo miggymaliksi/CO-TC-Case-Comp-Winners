@@ -2,32 +2,43 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Savor: Open phone demo",
+      "type": "shell",
+      "command": "python3",
+      "args": ["run.py", "--desktop"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
       "label": "Savor: Set up free local AI",
       "type": "shell",
       "command": "python3",
-      "windows": {"command": "python"},
+      "windows": { "command": "python" },
       "args": ["local_ai_runtime.py"],
-      "options": {"cwd": "${workspaceFolder}"},
+      "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": [],
-      "presentation": {"reveal": "always", "panel": "dedicated"}
+      "presentation": { "reveal": "always", "panel": "dedicated" }
     },
     {
       "label": "Savor: Start local app",
       "type": "shell",
       "command": "python3",
-      "windows": {"command": "python"},
+      "windows": { "command": "python" },
       "args": ["run.py"],
-      "options": {"cwd": "${workspaceFolder}"},
+      "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": [],
-      "presentation": {"reveal": "always", "panel": "dedicated"}
+      "presentation": { "reveal": "always", "panel": "dedicated" }
     },
     {
       "label": "Savor: Check backend",
       "type": "process",
       "command": "${workspaceFolder}/.venv/bin/python",
-      "windows": {"command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"},
+      "windows": {
+        "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+      },
       "args": ["-m", "pytest", "backend/test_api.py", "-q"],
-      "options": {"cwd": "${workspaceFolder}"},
+      "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": []
     }
   ]

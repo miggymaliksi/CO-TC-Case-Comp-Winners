@@ -400,19 +400,22 @@ function App() {
         <p className="brand-caption">GOOD FOOD. SHARED.</p>
         <nav aria-label="Main navigation">
           {[
-            ["dashboard", LayoutDashboard, "Overview"],
-            ["pantry", ShoppingBasket, "My pantry"],
-            ["recipes", BookOpen, "Recipe ideas"],
-            ["community", Users, "My community"],
-            ["activity", Activity, "Our impact"],
-          ].map(([key, Icon, label]) => (
+            ["dashboard", LayoutDashboard, "Overview", "Home"],
+            ["pantry", ShoppingBasket, "My pantry", "Pantry"],
+            ["recipes", BookOpen, "Recipe ideas", "Recipes"],
+            ["community", Users, "My community", "Community"],
+            ["activity", Activity, "Our impact", "Impact"],
+          ].map(([key, Icon, label, mobileLabel]) => (
             <button
               key={key}
               className={`nav-item ${page === key ? "active" : ""}`}
+              aria-label={label}
+              aria-current={page === key ? "page" : undefined}
               onClick={() => navigate(key)}
             >
               <Icon size={19} strokeWidth={1.7} />
-              {label}
+              <span className="nav-label">{label}</span>
+              <span className="mobile-nav-label">{mobileLabel}</span>
               {key === "community" && incoming.length > 0 && (
                 <span className="nav-count">{incoming.length}</span>
               )}
@@ -544,7 +547,7 @@ function App() {
                     <br />A lot more <em>possibility.</em>
                   </h2>
                   <p>
-                    Turn what’s on hand into something delicious.
+                    Turn what’s on hand into something delicious.{" "}
                     <br />
                     And borrow a little inspiration from your community.
                   </p>

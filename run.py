@@ -59,6 +59,25 @@ def main():
     if "--prepare" in sys.argv:
         print("Savor is ready. Run python3 run.py to start.")
         return
+    if "--desktop" in sys.argv:
+        if sys.platform != "darwin":
+            raise RuntimeError("The phone-style desktop demo currently supports Mac.")
+        npm = shutil.which("npm")
+        node = shutil.which("node")
+        if not npm or not node:
+            raise RuntimeError("Install Node.js, restart VS Code, then try again.")
+        desktop = ROOT / "desktop"
+        lock = desktop / "package-lock.json"
+        stamp = desktop / "node_modules/.savor-lock.sha256"
+        version = hashlib.sha256(lock.read_bytes()).hexdigest()
+        if not stamp.exists() or stamp.read_text() != version:
+            print("Preparing Savor's Mac window…", flush=True)
+            run([npm, "ci", "--no-audit", "--no-fund"], desktop)
+            stamp.write_text(version)
+        if not (desktop / "node_modules/electron/path.txt").exists():
+            run([node, "node_modules/electron/install.js"], desktop)
+        run([npm, "start"], desktop)
+        return
     config = ROOT / ".env"
     if config.exists():
         for line in config.read_text().splitlines():

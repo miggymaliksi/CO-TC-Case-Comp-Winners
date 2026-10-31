@@ -2160,7 +2160,7 @@ footer button {
     height: 100%;
   }
   .nav-item {
-    font-size: 7px;
+    font-size: 11px;
     flex-direction: column;
     justify-content: center;
     gap: 5px;
@@ -2178,7 +2178,7 @@ footer button {
     position: absolute;
     top: 3px;
     right: 13px;
-    font-size: 7px;
+    font-size: 11px;
     min-width: 13px;
     padding: 1px;
   }
@@ -2190,7 +2190,7 @@ footer button {
     padding: 0 21px;
   }
   .breadcrumbs {
-    font-size: 9px;
+    font-size: 12px;
     gap: 7px;
   }
   .breadcrumbs:before {
@@ -2216,10 +2216,10 @@ footer button {
   .top-avatar {
     width: 27px;
     height: 27px;
-    font-size: 10px;
+    font-size: 13px;
   }
   .demo-pill {
-    font-size: 7px;
+    font-size: 11px;
     padding: 5px 7px;
   }
   .page-content {
@@ -2233,12 +2233,12 @@ footer button {
     margin-bottom: 22px;
   }
   .section-heading .eyebrow {
-    font-size: 6.5px;
+    font-size: 10px;
     letter-spacing: 1.2px;
     margin-bottom: 7px;
   }
   .section-heading p:not(.eyebrow) {
-    font-size: 10px;
+    font-size: 13px;
     margin-top: 7px;
     max-width: 240px;
   }
@@ -2254,7 +2254,7 @@ footer button {
     padding-left: 7px;
   }
   .section-heading > .button {
-    font-size: 8px;
+    font-size: 11px;
     padding: 8px 10px;
     min-height: 33px;
     margin-top: 5px;
@@ -2264,7 +2264,7 @@ footer button {
     width: 13px;
   }
   .section-heading .text-button {
-    font-size: 9px;
+    font-size: 12px;
     gap: 6px;
     white-space: nowrap;
   }
@@ -2284,15 +2284,15 @@ footer button {
     margin-top: 15px;
   }
   .hero .pill-light {
-    font-size: 6px;
+    font-size: 10px;
   }
   .hero p {
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.8;
     max-width: 210px;
   }
   .hero .button {
-    font-size: 9px;
+    font-size: 12px;
     margin-top: 17px;
   }
   .hero-art {
@@ -2335,7 +2335,7 @@ footer button {
     gap: 0;
   }
   .stats-strip span {
-    font-size: 7px;
+    font-size: 11px;
   }
   .stats-strip strong {
     font-size: 21px;
@@ -2351,22 +2351,22 @@ footer button {
     padding: 17px;
   }
   .recipe-copy .eyebrow {
-    font-size: 7px;
+    font-size: 11px;
   }
   .recipe-copy h3 {
     font-size: 21px;
   }
   .recipe-copy > p {
-    font-size: 10px;
+    font-size: 13px;
     margin-top: 7px;
   }
   .recipe-meta {
-    font-size: 9px;
+    font-size: 12px;
     gap: 16px;
     margin-top: 19px;
   }
   .coverage {
-    font-size: 9px;
+    font-size: 12px;
     left: 14px;
     top: 14px;
     padding: 6px 9px;
@@ -2388,16 +2388,16 @@ footer button {
     font-size: 29px;
   }
   .pantry-preview-row strong {
-    font-size: 12px;
+    font-size: 14px;
   }
   .pantry-preview-row small {
-    font-size: 9px;
+    font-size: 12px;
   }
   .age {
-    font-size: 9px;
+    font-size: 12px;
   }
   .fine-print {
-    font-size: 9px;
+    font-size: 12px;
   }
   .community-callout {
     padding: 28px 22px;
@@ -2406,16 +2406,16 @@ footer button {
     font-size: 34px;
   }
   .community-callout p:not(.eyebrow) {
-    font-size: 11px;
+    font-size: 14px;
   }
   .community-callout .eyebrow {
-    font-size: 7px;
+    font-size: 11px;
   }
   .callout-foot {
-    font-size: 8px;
+    font-size: 11px;
   }
   .community-callout .button {
-    font-size: 11px;
+    font-size: 14px;
   }
   .toolbar {
     gap: 16px;
@@ -2431,7 +2431,7 @@ footer button {
     gap: 3px;
   }
   .tabs button {
-    font-size: 10px;
+    font-size: 13px;
     padding: 8px 11px;
   }
   .pantry-grid {
@@ -2448,13 +2448,13 @@ footer button {
     font-size: 15px;
   }
   .pantry-item p {
-    font-size: 11px;
+    font-size: 14px;
   }
   .pantry-item-foot {
-    font-size: 8px;
+    font-size: 11px;
   }
   .location-label {
-    font-size: 8px;
+    font-size: 11px;
     right: 12px;
     top: 13px;
   }
@@ -2467,7 +2467,7 @@ footer button {
     flex-shrink: 0;
   }
   .button-group > .button {
-    font-size: 9px;
+    font-size: 12px;
     gap: 5px;
     min-height: 32px;
     padding: 7px 10px;
@@ -2480,10 +2480,10 @@ footer button {
     gap: 12px;
   }
   .recipe-banner strong {
-    font-size: 12px;
+    font-size: 14px;
   }
   .recipe-banner p {
-    font-size: 9px;
+    font-size: 12px;
   }
   .recipe-banner > span {
     font-size: 25px;
@@ -2497,22 +2497,22 @@ footer button {
   }
   .community-add {
     min-height: 80px;
-    font-size: 10px;
+    font-size: 13px;
   }
   .community-card h3 {
     font-size: 15px;
   }
   .community-card p {
-    font-size: 10px;
+    font-size: 13px;
   }
   .request-card {
     padding: 18px;
   }
   .request-name h3 {
-    font-size: 13px;
+    font-size: 15px;
   }
   .request-name p {
-    font-size: 9px;
+    font-size: 12px;
   }
   .ingredient-icon {
     height: 40px;
@@ -2523,23 +2523,23 @@ footer button {
     gap: 10px;
   }
   .status {
-    font-size: 7px;
+    font-size: 11px;
   }
   .request-tags .tag {
-    font-size: 8px;
+    font-size: 11px;
   }
   .friends-strip {
-    font-size: 10px;
+    font-size: 13px;
     gap: 8px;
   }
   .friends-strip .text-button {
-    font-size: 9px;
+    font-size: 12px;
   }
   .request-note {
-    font-size: 10px;
+    font-size: 13px;
   }
   .request-actions .button {
-    font-size: 9px;
+    font-size: 12px;
     gap: 5px;
   }
   .impact-grid {
@@ -2556,7 +2556,7 @@ footer button {
     font-size: 16px;
   }
   .impact-card p {
-    font-size: 11px;
+    font-size: 14px;
   }
   .impact-card > svg {
     float: right;
@@ -2573,7 +2573,7 @@ footer button {
     font-size: 30px;
   }
   .modal-heading p {
-    font-size: 10px;
+    font-size: 13px;
     line-height: 1.7;
   }
   .modal-bottom {
@@ -2582,7 +2582,7 @@ footer button {
   }
   .modal-bottom > .small-text {
     flex-basis: 100%;
-    font-size: 9px;
+    font-size: 12px;
   }
   .recipe-detail {
     grid-template-columns: 1fr;
@@ -2595,24 +2595,24 @@ footer button {
     margin-bottom: 18px;
   }
   .detail-coverage > span {
-    font-size: 11px;
+    font-size: 14px;
   }
   .ingredient-line strong {
-    font-size: 12px;
+    font-size: 14px;
   }
   .ingredient-line small {
-    font-size: 10px;
+    font-size: 13px;
   }
   .method li {
-    font-size: 11px;
+    font-size: 14px;
   }
   .error-banner {
     padding: 11px 20px;
-    font-size: 10px;
+    font-size: 13px;
     align-items: flex-start;
   }
   .toast {
-    font-size: 11px;
+    font-size: 14px;
     bottom: 80px;
     width: max-content;
     max-width: calc(100% - 35px);
@@ -2630,7 +2630,7 @@ footer button {
     font-size: 42px;
   }
   .loading-screen p {
-    font-size: 12px;
+    font-size: 14px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2648,6 +2648,9 @@ footer button {
 }
 .top-avatar {
   padding: 0;
+}
+.mobile-nav-label {
+  display: none;
 }
 @media (max-width: 650px) {
   .hero {
@@ -2732,5 +2735,221 @@ footer button {
   .recipe-banner > .button {
     margin-left: 42px;
     font-size: 10px;
+  }
+}
+
+/* Phone controls keep readable labels and room for a finger, including in the Mac demo. */
+@media (max-width: 650px) {
+  .nav-label {
+    display: none;
+  }
+  .mobile-nav-label {
+    display: block;
+  }
+  .app-shell {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+  .sidebar {
+    height: calc(74px + env(safe-area-inset-bottom));
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  }
+  .nav-item {
+    font-size: 11px;
+    gap: 5px;
+    min-height: 56px;
+  }
+  .nav-item > svg {
+    width: 23px;
+    height: 23px;
+  }
+  .nav-count {
+    font-size: 10px;
+    min-width: 16px;
+    top: 1px;
+    right: 10px;
+  }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    background: #f8f8f3f5;
+    backdrop-filter: blur(14px);
+  }
+  .breadcrumbs {
+    font-size: 0;
+  }
+  .breadcrumbs:before {
+    font-size: 29px;
+  }
+  .top-actions {
+    gap: 8px;
+  }
+  .demo-pill {
+    font-size: 10px;
+  }
+  .top-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+  }
+  .notification-button {
+    width: 36px;
+    min-height: 44px;
+  }
+  .notification-button > svg {
+    width: 20px;
+  }
+  .button,
+  .text-button,
+  .icon-btn,
+  .tabs button {
+    min-height: 44px;
+  }
+  .button,
+  .button.small,
+  .button-group > .button,
+  .section-heading > .button {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+  .button > svg,
+  .button-group > .button svg,
+  .section-heading > .button > svg {
+    width: 17px;
+  }
+  .icon-btn {
+    min-width: 44px;
+  }
+  .greeting {
+    padding-bottom: 60px;
+  }
+  .greeting > .button {
+    width: 100%;
+    justify-content: center;
+  }
+  .section-heading .eyebrow {
+    line-height: 1.6;
+  }
+  .section-heading .text-button {
+    font-size: 12px;
+  }
+  .section-heading > div > h1 {
+    font-size: 36px;
+  }
+  .hero-copy {
+    padding: 26px 22px;
+  }
+  .hero .pill-light {
+    font-size: 10px;
+  }
+  .hero p {
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 270px;
+  }
+  .hero p br {
+    display: none;
+  }
+  .hero .button {
+    font-size: 13px;
+    min-height: 44px;
+  }
+  .hero {
+    min-height: 440px;
+  }
+  .hero-art {
+    width: 135px;
+    height: 135px;
+    bottom: -15px;
+  }
+  .hero-plate {
+    width: 135px;
+    height: 135px;
+  }
+  .stats-strip span {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .stats-strip strong {
+    font-size: 24px;
+  }
+  .recipe-copy > p,
+  .recipe-meta {
+    font-size: 14px;
+  }
+  .recipe-copy .eyebrow {
+    font-size: 11px;
+  }
+  .recipe-banner strong {
+    font-size: 15px;
+  }
+  .recipe-banner p,
+  .recipe-banner small {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .recipe-banner > .button {
+    margin-left: 0;
+    width: 100%;
+    font-size: 13px;
+  }
+  .tabs {
+    overflow-x: auto;
+  }
+  .tabs button {
+    flex-shrink: 0;
+    font-size: 13px;
+  }
+  .pantry-item {
+    padding: 14px;
+  }
+  .pantry-item h3 {
+    font-size: 17px;
+  }
+  .pantry-item-foot,
+  .location-label {
+    font-size: 11px;
+  }
+  .request-name p {
+    line-height: 1.5;
+  }
+  .request-actions {
+    flex-wrap: wrap;
+  }
+  .request-actions .button {
+    font-size: 13px;
+  }
+  .modal {
+    padding: 22px;
+    width: calc(100% - 20px);
+    max-height: calc(100dvh - 28px);
+  }
+  .modal-heading p,
+  .small-text,
+  .modal-bottom > .small-text {
+    font-size: 14px;
+  }
+  .modal input,
+  .modal select,
+  .modal textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .modal .field {
+    font-size: 14px;
+  }
+  .ingredient-line strong {
+    font-size: 14px;
+  }
+  .ingredient-line small,
+  .ingredient-line .text-button {
+    font-size: 13px;
+  }
+  .method li {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .toast {
+    bottom: calc(90px + env(safe-area-inset-bottom));
   }
 }

@@ -53,14 +53,18 @@ def start():
         [binary, "serve"], env=runtime_env(), stdout=log, stderr=subprocess.STDOUT
     )
     log.close()
-    for _ in range(50):
-        if ready():
-            return process
-        if process.poll() is not None:
-            return None
-        time.sleep(0.2)
-    process.terminate()
-    return None
+    try:
+        for _ in range(50):
+            if ready():
+                return process
+            if process.poll() is not None:
+                return None
+            time.sleep(0.2)
+        stop(process)
+        return None
+    except BaseException:
+        stop(process)
+        raise
 
 
 def stop(process):
