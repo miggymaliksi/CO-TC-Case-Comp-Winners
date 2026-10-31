@@ -21,6 +21,21 @@ The first run creates `savor.db` in this folder. It stores only the local demo's
 
 If port 8000 is already in use, stop the other Savor terminal, or copy `.env.example` to `.env` and set `SAVOR_PORT=8001`. Never commit `.env`.
 
+## Free on-device AI
+
+This version uses **Ollama + Qwen3 4B** on your computer. It does not load an OpenAI API key or make paid API requests. Cloud models are disabled in the runtime started by Savor, and the backend only calls the loopback address `127.0.0.1:11434`. Model names are restricted to supported local Qwen3 models.
+
+For this prepared Mac checkout, the runtime and model are already downloaded into the ignored `.local-ai/` folder. On another computer:
+
+1. Install Ollama from [its official download page](https://ollama.com/download). No cloud account is needed.
+2. In VS Code, run **Savor: Set up free local AI**. It downloads `qwen3:4b` (about 2.5 GB) into this checkout's ignored `.local-ai/models` folder. Close an already running Ollama app first if you want Savor to manage its own model location and local-only settings.
+3. Run **Savor: Start local app**. The launcher starts the local model service when available and stops a service it owns when you stop Savor.
+4. Open **Recipe ideas → Generate a dinner idea**. It produces one recipe, checks its structure/servings/quantities, saves it privately, and shows it under **Local AI**. Matching suggestions for an unchanged pantry are reused for 15 minutes.
+
+The model needs memory and processing power. On an 8 GB Mac, close unused apps and avoid running several generations in parallel. The first result may take a minute or two; invalid results are rejected and the curated recipes remain available. There is no per-request API fee, but local computation still uses electricity and disk space. A model is not downloaded by normal app startup; the setup task is explicit.
+
+For a smaller, less reliable model, set `SAVOR_LOCAL_MODEL=qwen3:1.7b` in the ignored `.env`, run setup, and restart. No remote inference URL can be configured through the app.
+
 ## Try the complete demo
 
 The app starts as **Alex**, with sample groceries. The top-right account button and the sidebar account selector switch between Alex, Jamie, and Sam. These are sample identities, not real logins.
@@ -41,14 +56,14 @@ Community chat is available by clicking a community card. Create a private group
 | Working locally | Still needs integration or later work |
 | --- | --- |
 | Pantry add/edit/remove, storage age, durable database | Production identity / Google sign-in |
-| Four curated recipes, quantity/unit matching, scaled servings and dietary/time filters | Live AI recipe generation |
+| Four curated recipes plus optional free local AI, quantity/unit matching, scaled servings and dietary/time filters | Larger-model quality tuning |
 | Private communities, friend invites, exact-quantity requests, accept/pass/cancel | Contacts or proximity discovery |
 | Inventory reservation, confirmed pickup, cooking records and duplicate protection | Live AI receipt extraction |
 | Private pickup and community chat; in-app request status updates | Scheduled morning delivery and external push notifications |
 | Leaderboard based on confirmed visible demo exchanges | Shared calendar, games and prizes |
 | Editable sample receipt with atomic import | Measured food-weight or dollar-savings estimates |
 
-All recipes, illustrations, initial messages, accounts, and initial groceries are sample content. The receipt screen explicitly labels its editable sample and does not upload or scan an image. “Eats of the Day” shows current curated matches; there is no background scheduler. No savings or user-adoption claims are fabricated. The 9,000-request figure is the team's aspiration, not achieved impact.
+The four curated recipes, illustrations, initial messages, accounts, and initial groceries are sample content. New recipes labeled locally generated are produced by the downloaded model. The receipt screen explicitly labels its editable sample and does not upload or scan an image. Recipe ideas include curated matches and saved local AI suggestions; there is no background scheduler. No savings or user-adoption claims are fabricated. The 9,000-request figure is the team's aspiration, not achieved impact.
 
 **Scope:** storage age instead of predicted expiration. No food-safety classification, payments, buying/selling, deliveries, or public social feed.
 
@@ -57,10 +72,12 @@ All recipes, illustrations, initial messages, accounts, and initial groceries ar
 - **Frontend:** React + Vite, with original vector food illustrations and responsive navigation. Google Fonts is optional; system fonts work offline.
 - **Backend:** FastAPI + SQLAlchemy, with input validation and authorization on the server.
 - **Database:** SQLite by default, so local setup needs no database account. PostgreSQL can be selected with `SAVOR_DATABASE_URL=postgresql+psycopg://…`. That configuration is supported by the models but has not been tested against a running PostgreSQL instance.
-- **Schema:** version 1 initializes new databases and seeds three sample accounts. There is no automatic upgrade system for later schema changes; add an explicit migration before evolving an existing database.
+- **Schema:** version 1 is the original demo. The additive version 2 migration adds private generated recipes and a generation cooldown without changing existing pantry records. Future schema changes need an explicit migration.
 - **Sessions:** random, expiring server-side session cookies, HttpOnly and SameSite=Strict. Mutations reject foreign browser origins; host checks and the launcher limit this sample-account build to local use. Demo identity switching intentionally allows access to all three *sample* accounts. Do not use real personal data or deploy this build as production authentication.
 - **Consistency:** SQLite serializes write transactions. PostgreSQL paths use row locks. Acceptance reserves existing quantities; completion/cancellation are repeat-safe, and cooking/import requests use idempotency keys. Confirmed transfers keep original storage dates and units.
 - **Coverage:** number of ingredient lines with sufficient compatible quantities divided by all ingredient lines. Recommended recipes require at least 80%; pantry-only recipes require 100%. Mass converts between grams/kg/oz, volume between ml/l/tsp/tbsp; count units match themselves. The app never guesses the weight of “one tomato.”
+
+A presentation-friendly explanation, system diagram, and Q&A are in [docs/TECHNICAL_RUNDOWN.md](docs/TECHNICAL_RUNDOWN.md).
 
 The API contract, source precedence, proposed choices, and build sequence are in [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md). Collaboration rules remain in [COxTC agent.md](COxTC%20agent.md).
 
@@ -89,7 +106,7 @@ npm run dev
 
 Use the Vite URL printed by the second terminal. For a custom API port, update the development proxy in `frontend/vite.config.js`.
 
-The focused tests cover persistence, ownership/privacy, quantities and units, serving scaling, missing ingredients, concurrent acceptance, expiry/decline fallback, reservation return, atomic receipt import, friend invites, private pickup chat, and duplicate pickup/cooking.
+The focused tests cover persistence, ownership/privacy, quantities and units, serving scaling, missing ingredients, concurrent acceptance, expiry/decline fallback, reservation return, atomic receipt import, friend invites, private pickup chat, duplicate pickup/cooking, local-model result validation, private recipe history, cache reuse, and rejection of cloud model names.
 
 ## Share changes safely
 
