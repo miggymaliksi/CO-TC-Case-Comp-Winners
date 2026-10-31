@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Leaf,
   LayoutDashboard,
   ShoppingBasket,
   Users,
@@ -33,6 +32,7 @@ import {
   PackageCheck,
 } from "lucide-react";
 import FoodArt from "./FoodArt";
+import savorLogo from "./assets/savor-logo.png";
 import { api } from "./api";
 
 import { NAMES, CATALOG, EMOJI, pretty, qty, localDate, timeLeft } from "./ui";
@@ -140,9 +140,8 @@ function App() {
   if (loading)
     return (
       <div className="loading-screen">
-        <Leaf size={36} />
-        <h1>
-          savor<span>®</span>
+        <h1 className="loading-brand">
+          <img className="savor-logo" src={savorLogo} alt="Savor" />
         </h1>
         <p>Finding a little possibility in your pantry…</p>
       </div>
@@ -150,7 +149,7 @@ function App() {
   if (!state)
     return (
       <div className="loading-screen">
-        <Leaf size={36} />
+        <img className="savor-logo" src={savorLogo} alt="Savor" />
         <h1>Let’s get Savor running.</h1>
         <p role="alert">{error}</p>
         <button className="button primary" onClick={() => location.reload()}>
@@ -387,15 +386,13 @@ function App() {
         <a
           href="#"
           className="brand"
+          aria-label="Savor home"
           onClick={(e) => {
             e.preventDefault();
             navigate("dashboard");
           }}
         >
-          <span className="brand-mark">
-            <Leaf size={29} strokeWidth={1.7} />
-          </span>
-          savor<span className="registered">®</span>
+          <img className="savor-logo" src={savorLogo} alt="Savor" />
         </a>
         <p className="brand-caption">GOOD FOOD. SHARED.</p>
         <nav aria-label="Main navigation">
@@ -467,6 +464,13 @@ function App() {
       </aside>
       <main className="main">
         <header className="topbar">
+          <button
+            className="mobile-brand"
+            aria-label="Savor home"
+            onClick={() => navigate("dashboard")}
+          >
+            <img className="savor-logo" src={savorLogo} alt="Savor" />
+          </button>
           <div className="breadcrumbs">
             Your space <ChevronRight size={13} />
             <span>
@@ -482,9 +486,12 @@ function App() {
             </span>
           </div>
           <div className="top-actions">
-            <span className="demo-pill">
+            <span className="demo-pill" title="Local demo · sample data">
               <span />
-              Local demo · sample data
+              <span className="desktop-demo-label">
+                Local demo · sample data
+              </span>
+              <span className="mobile-demo-label">Demo</span>
             </span>
             <button
               className="notification-button"
@@ -547,8 +554,7 @@ function App() {
                     <br />A lot more <em>possibility.</em>
                   </h2>
                   <p>
-                    Turn what’s on hand into something delicious.{" "}
-                    <br />
+                    Turn what’s on hand into something delicious. <br />
                     And borrow a little inspiration from your community.
                   </p>
                   <button
@@ -1073,7 +1079,7 @@ function App() {
           )}
           <footer>
             <span className="footer-brand">
-              <Leaf size={15} /> savor
+              <img className="savor-logo" src={savorLogo} alt="Savor" />
             </span>
             <span>Good food deserves good company.</span>
             <button onClick={() => setModal({ type: "about" })}>

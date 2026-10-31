@@ -148,31 +148,29 @@ body:has(dialog[open]) {
   z-index: 10;
 }
 .brand {
-  font-family: Georgia, serif;
-  letter-spacing: -3px;
-  font-size: 46px;
   text-decoration: none;
-  font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding-left: 13px;
-  line-height: 1;
+  padding-left: 9px;
 }
-.brand-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(-18deg);
+.savor-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
-.registered {
-  align-self: flex-start;
-  letter-spacing: 0;
-  font:
-    11px "DM Sans",
-    sans-serif;
-  margin-left: -4px;
-  margin-top: 3px;
+.brand .savor-logo {
+  width: 180px;
+  max-width: 100%;
+}
+.mobile-brand,
+.mobile-demo-label {
+  display: none;
+}
+.loading-screen .savor-logo {
+  width: 230px;
+  max-width: 100%;
+  margin: 0 auto 20px;
 }
 .brand-caption {
   font-size: 8.5px;
@@ -338,7 +336,7 @@ body:has(dialog[open]) {
   align-items: center;
   gap: 6px;
 }
-.demo-pill > span {
+.demo-pill > span:first-child {
   width: 5px;
   height: 5px;
   background: #80925e;
@@ -952,12 +950,7 @@ footer {
 .footer-brand {
   display: flex;
   align-items: center;
-  gap: 5px;
-  color: #7d8f6e;
-  font:
-    18px Georgia,
-    serif;
-  letter-spacing: -1px;
+  width: 84px;
 }
 footer button {
   font-size: 8px;
@@ -1944,8 +1937,8 @@ footer button {
     gap: 4px;
     padding-left: 7px;
   }
-  .brand-mark > svg {
-    width: 26px;
+  .brand .savor-logo {
+    width: 146px;
   }
   .brand-caption {
     font-size: 6px;
@@ -2192,14 +2185,6 @@ footer button {
   .breadcrumbs {
     font-size: 12px;
     gap: 7px;
-  }
-  .breadcrumbs:before {
-    content: "savor";
-    font-family: Georgia, serif;
-    font-size: 23px;
-    letter-spacing: -1.5px;
-    color: var(--green);
-    margin-right: 7px;
   }
   .breadcrumbs > span {
     display: none;
@@ -2705,10 +2690,6 @@ footer button {
   .breadcrumbs {
     font-size: 0;
   }
-  .breadcrumbs:before {
-    font-size: 23px;
-    margin-right: 0;
-  }
 }
 
 .recipe-banner > div {
@@ -2776,16 +2757,26 @@ footer button {
     backdrop-filter: blur(14px);
   }
   .breadcrumbs {
-    font-size: 0;
+    display: none;
   }
-  .breadcrumbs:before {
-    font-size: 29px;
+  .mobile-brand {
+    display: block;
+    width: 124px;
+    min-height: 44px;
+    padding: 0;
+    flex-shrink: 0;
   }
   .top-actions {
     gap: 8px;
   }
   .demo-pill {
     font-size: 10px;
+  }
+  .desktop-demo-label {
+    display: none;
+  }
+  .mobile-demo-label {
+    display: inline;
   }
   .top-avatar {
     width: 38px;

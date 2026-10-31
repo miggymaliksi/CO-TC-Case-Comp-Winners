@@ -13,6 +13,10 @@ async function build() {
   for (const name of ["main.cjs", "server.py", "loading.html"]) {
     await fs.copyFile(path.join(__dirname, name), path.join(stage, name));
   }
+  await fs.copyFile(
+    path.join(root, "frontend/src/assets/savor-logo.png"),
+    path.join(stage, "savor-logo.png"),
+  );
   const source = JSON.parse(
     await fs.readFile(path.join(__dirname, "package.json"), "utf8"),
   );

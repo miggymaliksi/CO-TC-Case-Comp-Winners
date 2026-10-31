@@ -200,6 +200,16 @@ if (!app.requestSingleInstanceLock()) {
   process.on("SIGTERM", () => app.quit());
   process.on("SIGINT", () => app.quit());
   app.whenReady().then(async () => {
+    if (!app.isPackaged) {
+      // The splash page uses the same original artwork as the React interface.
+      fs.copyFileSync(
+        path.join(root, "frontend/src/assets/savor-logo.png"),
+        path.join(__dirname, "savor-logo.png"),
+      );
+    }
+    if (process.platform === "darwin") {
+      app.dock.setIcon(path.join(root, "frontend/src/assets/savor-icon.png"));
+    }
     Menu.setApplicationMenu(
       Menu.buildFromTemplate([
         {

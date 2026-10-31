@@ -13,4 +13,5 @@ __pycache__/
 .desktop-data/
 desktop/.stage/
 desktop/release/
+desktop/savor-logo.png
 .DS_Store
