@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Prepare and start the local demo without asking beginners to activate environments."""
+import hashlib
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import threading
+import venv
+import webbrowser
+
+ROOT = Path(__file__).resolve().parent
+
+
+def run(command, cwd=ROOT):
+    subprocess.run(command, cwd=cwd, check=True)
+
+
+def main():
+    os.chdir(ROOT)
+    if sys.version_info < (3, 9):
+        raise RuntimeError(
+            "Savor needs Python 3.9 or later. Python 3.11+ is recommended."
+        )
+    env = ROOT / ".venv"
+    python = env / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    if not python.exists():
+        print("Preparing Savor's local Python environment…", flush=True)
+        venv.EnvBuilder(with_pip=True).create(env)
+    requirements = ROOT / "backend/requirements.lock"
+    digest = hashlib.sha256(requirements.read_bytes()).hexdigest()
+    marker = env / ".savor-requirements.sha256"
+    if not marker.exists() or marker.read_text() != digest:
+        print("Installing Savor's Python packages…", flush=True)
+        run([str(python), "-m", "pip", "install", "-r", str(requirements)])
+        marker.write_text(digest)
+    frontend = ROOT / "frontend"
+    index = frontend / "dist/index.html"
+    inputs = list((frontend / "src").glob("*")) + [
+        frontend / "package.json",
+        frontend / "package-lock.json",
+        frontend / "index.html",
+        frontend / "vite.config.js",
+    ]
+    needs_build = not index.exists() or any(
+        p.stat().st_mtime > index.stat().st_mtime for p in inputs
+    )
+    if needs_build:
+        npm = shutil.which("npm")
+        if not npm:
+            raise RuntimeError(
+                "Install Node.js (version 22.12+ or 24+) from nodejs.org, restart VS Code, then try again."
+            )
+        print("Preparing Savor's interface…", flush=True)
+        run([npm, "ci", "--no-audit", "--no-fund"], frontend)
+        run([npm, "run", "build"], frontend)
+    if "--prepare" in sys.argv:
+        print("Savor is ready. Run python3 run.py to start.")
+        return
+    config = ROOT / ".env"
+    if config.exists():
+        for line in config.read_text().splitlines():
+            key, sep, value = line.partition("=")
+            key = key.strip()
+            if sep and key.startswith("SAVOR_"):
+                os.environ.setdefault(key, value.strip().strip('"').strip("'"))
+    host = os.environ.get("SAVOR_HOST", "127.0.0.1")
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        raise RuntimeError(
+            "This sample-account build runs on your computer only. Use SAVOR_HOST=127.0.0.1."
+        )
+    port = int(os.environ.get("SAVOR_PORT", "8000"))
+    print(
+        f"\nSavor is opening at http://{host}:{port}\nKeep this terminal open. Press Ctrl+C to stop.\n",
+        flush=True,
+    )
+    if "--no-browser" not in sys.argv:
+        threading.Timer(2, lambda: webbrowser.open(f"http://{host}:{port}")).start()
+    run(
+        [
+            str(python),
+            "-m",
+            "uvicorn",
+            "backend.main:app",
+            "--host",
+            host,
+            "--port",
+            str(port),
+        ]
+    )
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nSavor stopped.")
+    except (RuntimeError, subprocess.CalledProcessError) as e:
+        print(f"\nCould not start Savor: {e}", file=sys.stderr)
+        sys.exit(1)
