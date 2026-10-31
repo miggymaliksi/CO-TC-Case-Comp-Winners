@@ -22,7 +22,7 @@ Open `desktop/release/Savor-darwin-arm64/Savor.app` on an Apple silicon Mac (`Sa
 
 The Mac app and browser version use the same local `savor.db`, so practice changes persist. Window preferences, local session cookies, and service logs are in the ignored `.desktop-data/` folder. No API key is needed. The desktop renderer has Node access disabled, context isolation and sandboxing enabled, restricted navigation, and a content security policy.
 
-Use [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md) for the live walkthrough and [docs/TECHNICAL_RUNDOWN.md](docs/TECHNICAL_RUNDOWN.md) for technical Q&A.
+Use [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md) for the two-minute walkthrough, [docs/TEAM_HANDOFF.md](docs/TEAM_HANDOFF.md) to explain the workflow and team setup, and [docs/TECHNICAL_RUNDOWN.md](docs/TECHNICAL_RUNDOWN.md) for technical Q&A.
 
 ## Run in VS Code
 
