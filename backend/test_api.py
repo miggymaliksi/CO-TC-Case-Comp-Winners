@@ -1,0 +1,301 @@
+import concurrent.futures
+from datetime import date, timedelta
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, event, select
+from sqlalchemy.orm import Session
+
+from backend import main
+from backend.models import IngredientRequest, PantryItem
+
+
+@pytest.fixture
+def clients(tmp_path, monkeypatch):
+    engine = create_engine(
+        f"sqlite:///{tmp_path}/test.db",
+        connect_args={"check_same_thread": False, "timeout": 20},
+    )
+
+    @event.listens_for(engine, "connect")
+    def foreign_keys(conn, _):
+        conn.execute("PRAGMA foreign_keys=ON")
+
+    monkeypatch.setattr(main, "engine", engine)
+    with TestClient(main.app) as a, TestClient(main.app) as b, TestClient(
+        main.app
+    ) as c:
+        for client, uid in [(a, 1), (b, 2), (c, 3)]:
+            assert (
+                client.post("/api/demo/session", json={"user_id": uid}).status_code
+                == 200
+            )
+        yield a, b, c
+    engine.dispose()
+
+
+def state(c):
+    r = c.get("/api/state")
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def recipe(c, id="tomato-pasta"):
+    return next(r for r in state(c)["recipes"] if r["id"] == id)
+
+
+def stock(c, name, unit):
+    return sum(
+        main.convert(i["quantity"], i["unit"], unit) or 0
+        for i in state(c)["pantry"]
+        if i["name"] == name
+    )
+
+
+def request(c, **overrides):
+    data = {
+        "name": "garlic",
+        "quantity": 1,
+        "unit": "clove",
+        "community_id": 1,
+        "minutes": 30,
+        "recipe_id": "tomato-pasta",
+    }
+    data.update(overrides)
+    r = c.post("/api/requests", json=data)
+    assert r.status_code == 201, r.text
+    return r.json()["id"]
+
+
+def test_pantry_persists_and_rejects_invalid_input(clients):
+    a, b, _ = clients
+    payload = {
+        "name": "  Carrots  ",
+        "quantity": 2,
+        "unit": "kg",
+        "stored_on": str(date.today()),
+        "location": "Fridge",
+    }
+    r = a.post("/api/pantry", json=payload)
+    assert r.status_code == 201
+    id = r.json()["id"]
+    assert next(i for i in state(a)["pantry"] if i["id"] == id)["name"] == "carrots"
+    with Session(main.engine) as db:
+        assert db.get(PantryItem, id).quantity == 2
+    assert b.patch(f"/api/pantry/{id}", json=payload).status_code == 404
+    assert b.delete(f"/api/pantry/{id}").status_code == 404
+    for bad in [
+        {"quantity": 0},
+        {"quantity": -1},
+        {"name": "   "},
+        {"unit": "handful"},
+        {"stored_on": str(date.today() + timedelta(days=1))},
+    ]:
+        assert a.post("/api/pantry", json={**payload, **bad}).status_code == 422
+    assert (
+        a.patch(f"/api/pantry/{id}", json={**payload, "quantity": 1}).status_code == 200
+    )
+    assert a.delete(f"/api/pantry/{id}").status_code == 200
+    assert all(i["id"] != id for i in state(a)["pantry"])
+
+
+def test_quantity_aware_coverage_scaling_and_unit_conversion(clients):
+    a, _, _ = clients
+    assert recipe(a)["coverage"] == 80
+    assert recipe(a, "tomato-toast")["ready"]
+    r = a.post(
+        "/api/pantry",
+        json={
+            "name": "garlic",
+            "quantity": 1,
+            "unit": "each",
+            "stored_on": str(date.today()),
+            "location": "Pantry",
+        },
+    )
+    assert r.status_code == 201
+    assert recipe(a)["coverage"] == 80  # each cannot silently convert to a clove
+    a.post(
+        "/api/pantry",
+        json={
+            "name": "garlic",
+            "quantity": 1,
+            "unit": "clove",
+            "stored_on": str(date.today()),
+            "location": "Pantry",
+        },
+    )
+    assert recipe(a)["ready"]
+    assert (
+        a.patch(
+            "/api/settings", json={"servings": 4, "diet": "All", "max_minutes": 60}
+        ).status_code
+        == 200
+    )
+    assert recipe(a)["servings"] == 4
+    garlic = next(i for i in recipe(a)["ingredients"] if i["name"] == "garlic")
+    assert garlic["quantity"] == 2 and garlic["missing"] == 1
+    assert main.convert(1, "kg", "g") == 1000
+    assert main.convert(1, "each", "g") is None
+
+
+def test_complete_exchange_and_cooking_are_idempotent(clients):
+    a, b, _ = clients
+    id = request(a)
+    before = stock(b, "garlic", "clove")
+    assert b.post(f"/api/requests/{id}/accept").status_code == 200
+    assert stock(b, "garlic", "clove") == before - 1
+    assert a.post(f"/api/requests/{id}/complete").status_code == 200
+    assert a.post(f"/api/requests/{id}/complete").json()["already_recorded"]
+    assert stock(a, "garlic", "clove") == 1
+    assert recipe(a)["ready"]
+    data = {"request_key": "test-meal-0001"}
+    assert a.post("/api/recipes/tomato-pasta/cook", json=data).status_code == 200
+    assert a.post("/api/recipes/tomato-pasta/cook", json=data).json()[
+        "already_recorded"
+    ]
+    assert stock(a, "garlic", "clove") == 0
+    assert state(a)["meals_cooked"] == 1
+    assert state(b)["shared_count"] == 1
+
+
+def test_reservations_return_original_age_on_cancel(clients):
+    a, b, _ = clients
+    id = request(a)
+    before = next(i for i in state(b)["pantry"] if i["name"] == "garlic")
+    b.post(f"/api/requests/{id}/accept")
+    assert b.post(f"/api/requests/{id}/cancel").status_code == 200
+    assert b.post(f"/api/requests/{id}/cancel").status_code == 200
+    assert stock(b, "garlic", "clove") == before["quantity"]
+    returned = [i for i in state(b)["pantry"] if i["name"] == "garlic"]
+    assert all(i["stored_on"] == before["stored_on"] for i in returned)
+    assert a.post(f"/api/requests/{id}/complete").status_code == 409
+
+
+def test_deadline_and_decline_fallback(clients):
+    a, b, c = clients
+    id = request(a)
+    with Session(main.engine) as db, db.begin():
+        db.get(IngredientRequest, id).deadline = main.now() - 1
+    assert b.post(f"/api/requests/{id}/accept").status_code == 409
+    assert next(r for r in state(a)["requests"] if r["id"] == id)["status"] == "expired"
+    assert any(r["ready"] for r in state(a)["recipes"])
+    direct = request(a, community_id=None, friend_id=2)
+    assert b.post(f"/api/requests/{direct}/decline").status_code == 200
+    assert (
+        next(r for r in state(a)["requests"] if r["id"] == direct)["status"]
+        == "declined"
+    )
+    community = request(a)
+    assert c.post(f"/api/requests/{community}/decline").status_code == 200
+    assert (
+        next(r for r in state(a)["requests"] if r["id"] == community)["status"]
+        == "pending"
+    )
+    assert b.post(f"/api/requests/{community}/accept").status_code == 200
+
+
+def test_access_boundaries_and_cross_site_mutations(clients):
+    a, b, c = clients
+    private = a.post("/api/communities", json={"name": "Just Alex"}).json()
+    id = request(a, community_id=private["id"])
+    assert all(r["id"] != id for r in state(b)["requests"])
+    assert b.post(f"/api/requests/{id}/accept").status_code == 404
+    assert b.get(f"/api/messages?community_id={private['id']}").status_code == 403
+    assert (
+        a.post(
+            "/api/messages", json={"community_id": private["id"], "body": "private"}
+        ).status_code
+        == 201
+    )
+    direct = request(a, community_id=None, friend_id=2)
+    assert c.post(f"/api/requests/{direct}/accept").status_code == 404
+    assert b.post(f"/api/requests/{direct}/complete").status_code == 403
+    assert a.post(f"/api/requests/{direct}/accept").status_code == 403
+    assert (
+        a.post(
+            "/api/demo/session",
+            json={"user_id": 1},
+            headers={"Origin": "https://evil.example"},
+        ).status_code
+        == 403
+    )
+    with TestClient(main.app) as stranger:
+        assert stranger.get("/api/state").status_code == 401
+    assert (
+        a.post(
+            "/api/requests",
+            json={
+                "name": "rice",
+                "quantity": 1,
+                "unit": "g",
+                "community_id": 1,
+                "friend_id": 2,
+            },
+        ).status_code
+        == 422
+    )
+
+
+def test_competing_acceptance_and_insufficient_inventory(clients):
+    a, b, c = clients
+    id = request(a)
+    # Two concurrent clicks by an eligible provider must reserve only one clove.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        codes = list(
+            pool.map(
+                lambda _: b.post(f"/api/requests/{id}/accept").status_code, range(2)
+            )
+        )
+    assert sorted(codes) == [200, 409]
+    assert stock(b, "garlic", "clove") == 7
+    huge = request(a, quantity=100)
+    assert b.post(f"/api/requests/{huge}/accept").status_code == 409
+    assert stock(b, "garlic", "clove") == 7
+
+
+def test_receipt_batch_atomic_and_duplicate_protected(clients):
+    a, _, _ = clients
+    row = {
+        "name": "carrots",
+        "quantity": 1,
+        "unit": "kg",
+        "stored_on": str(date.today()),
+        "location": "Fridge",
+    }
+    data = {"rows": [row], "request_key": "receipt-test-1"}
+    assert a.post("/api/pantry/batch", json=data).status_code == 200
+    assert a.post("/api/pantry/batch", json=data).json()["already_recorded"]
+    assert stock(a, "carrots", "kg") == 1
+    bad = {
+        "rows": [{**row, "name": "potatoes"}, {**row, "quantity": -1}],
+        "request_key": "receipt-test-2",
+    }
+    assert a.post("/api/pantry/batch", json=bad).status_code == 422
+    assert stock(a, "potatoes", "kg") == 0
+
+
+def test_private_pickup_chat_and_friend_invite(clients):
+    a, b, c = clients
+    id = request(a)
+    assert b.post(f"/api/requests/{id}/accept").status_code == 200
+    msg = {"request_id": id, "body": "Meet in the lobby?"}
+    assert a.post("/api/messages", json=msg).status_code == 201
+    assert b.get(f"/api/messages?request_id={id}").json()[0]["body"] == msg["body"]
+    assert c.get(f"/api/messages?request_id={id}").status_code == 403
+    invite = a.post("/api/friends/invite").json()
+    assert c.post("/api/friends/join", json=invite).status_code == 200
+    assert {f["id"] for f in state(a)["friends"]} == {2, 3}
+    assert c.post("/api/friends/join", json=invite).status_code == 404
+
+
+def test_cook_cannot_consume_missing_ingredients(clients):
+    a, _, _ = clients
+    before = stock(a, "pasta", "g")
+    assert (
+        a.post(
+            "/api/recipes/tomato-pasta/cook", json={"request_key": "missing-garlic"}
+        ).status_code
+        == 409
+    )
+    assert stock(a, "pasta", "g") == before
