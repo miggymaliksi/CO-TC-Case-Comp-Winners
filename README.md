@@ -2,6 +2,8 @@
 
 Good food. Shared. A local case-competition demo for pantry tracking, quantity-aware recipes, and private ingredient sharing.
 
+Start with [Run and present Savor](docs/RUN_AND_PRESENT.md) for the VS Code steps, plain-language technical rundown, and two-minute mock demo script.
+
 ## Phone-style Mac demo
 
 In VS Code, choose **Terminal → Run Task → Savor: Open phone demo**. Or enter:
