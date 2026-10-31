@@ -2707,3 +2707,30 @@ footer button {
     margin-right: 0;
   }
 }
+
+.recipe-banner > div {
+  flex: 1;
+}
+.recipe-banner small {
+  display: block;
+  font-size: 9px;
+  color: #8c947d;
+  margin-top: 5px;
+}
+.generation-note {
+  font-size: 12px;
+  color: #6e845e;
+  background: #eef2e5;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 0 0 20px;
+}
+@media (max-width: 900px) {
+  .recipe-banner {
+    flex-wrap: wrap;
+  }
+  .recipe-banner > .button {
+    margin-left: 42px;
+    font-size: 10px;
+  }
+}

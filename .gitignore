@@ -8,4 +8,6 @@ __pycache__/
 *.db-wal
 *.db-shm
 .env
+.env.local
+.local-ai/
 .DS_Store

@@ -55,6 +55,7 @@ function App() {
     [toast, setToast] = useState(""),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
+    [generating, setGenerating] = useState(false),
     [filter, setFilter] = useState(""),
     [pantryLoc, setPantryLoc] = useState("All"),
     [recipeFilter, setRecipeFilter] = useState("Recommended"),
@@ -177,6 +178,37 @@ function App() {
       i.name.includes(filter.toLowerCase()) &&
       (pantryLoc === "All" || i.location === pantryLoc),
   );
+  const localRecipes = state.recipes.filter((r) => r.source === "local_ai");
+  const shownRecipes =
+    recipeFilter === "Recommended"
+      ? recommended
+      : recipeFilter === "Ready to cook"
+        ? ready
+        : recipeFilter === "Local AI"
+          ? localRecipes
+          : state.recipes;
+  const generateIdea = async () => {
+    if (busy || generating) return;
+    setBusy(true);
+    setGenerating(true);
+    setError("");
+    try {
+      const result = await api("/recipes/generate", {});
+      await refresh();
+      setRecipeFilter("Local AI");
+      navigate("recipes");
+      setToast(
+        result.cached
+          ? "Loaded your saved local AI idea"
+          : "Your local AI dinner idea is ready",
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+      setGenerating(false);
+    }
+  };
   const requestAction = (r, action, msg) =>
     safe(() => api(`/requests/${r.id}/${action}`, {}), msg);
 
@@ -568,8 +600,7 @@ function App() {
                     <p className="eyebrow">LESS “WHAT’S FOR DINNER?”</p>
                     <h2>Made for your pantry</h2>
                     <p>
-                      Curated recipe ideas matched to your ingredients and
-                      quantities.
+                      Recipe ideas matched to your ingredients and quantities.
                     </p>
                   </div>
                   <button
@@ -795,41 +826,54 @@ function App() {
               <div className="recipe-banner">
                 <span>🌤️</span>
                 <div>
-                  <strong>Eats of the Day</strong>
+                  <strong>Made here. On your computer.</strong>
                   <p>
-                    Today’s curated ideas. Live AI generation and morning push
-                    delivery are not connected.
+                    {state.ai?.ready
+                      ? `Free local AI · ${state.ai.model}. One new idea, using your pantry.`
+                      : "The local service may be starting or off. Saved and curated recipes still work; the setup task can start local AI."}
                   </p>
+                  <small>
+                    Pantry ingredients and preferences stay on this computer. No
+                    API fees.
+                  </small>
                 </div>
+                <button
+                  className="button primary"
+                  disabled={busy || generating}
+                  onClick={generateIdea}
+                >
+                  <Sprout size={16} />
+                  {generating
+                    ? "Thinking on your computer…"
+                    : "Generate a dinner idea"}
+                </button>
               </div>
+              {generating && (
+                <p className="generation-note" role="status">
+                  The small local model is working. The first idea can take a
+                  minute or two. Your pantry won’t be changed.
+                </p>
+              )}
               <div className="tabs recipe-tabs">
-                {["Recommended", "Ready to cook", "All ideas"].map((t) => (
-                  <button
-                    key={t}
-                    className={recipeFilter === t ? "selected" : ""}
-                    onClick={() => setRecipeFilter(t)}
-                  >
-                    {t}
-                    {t === "Ready to cook" && <span>{ready.length}</span>}
-                  </button>
-                ))}
+                {["Recommended", "Ready to cook", "Local AI", "All ideas"].map(
+                  (t) => (
+                    <button
+                      key={t}
+                      className={recipeFilter === t ? "selected" : ""}
+                      onClick={() => setRecipeFilter(t)}
+                    >
+                      {t}
+                      {t === "Ready to cook" && <span>{ready.length}</span>}
+                    </button>
+                  ),
+                )}
               </div>
               <div className="recipe-grid">
-                {(recipeFilter === "Recommended"
-                  ? recommended
-                  : recipeFilter === "Ready to cook"
-                    ? ready
-                    : state.recipes
-                ).map((r) => (
+                {shownRecipes.map((r) => (
                   <RecipeCard key={r.id} recipe={r} />
                 ))}
               </div>
-              {(recipeFilter === "Recommended"
-                ? recommended
-                : recipeFilter === "Ready to cook"
-                  ? ready
-                  : state.recipes
-              ).length === 0 && (
+              {shownRecipes.length === 0 && (
                 <Empty
                   icon={BookOpen}
                   title="Let’s find your next meal."
@@ -841,7 +885,8 @@ function App() {
               <p className="fine-print">
                 Coverage = ingredient lines fully covered by compatible pantry
                 quantities ÷ all ingredient lines. Recommended ideas start at
-                80%. Recipes are curated demo data.
+                80%. Each recipe is labeled as curated or locally generated.
+                Food images are illustrations.
               </p>
             </>
           )}
@@ -1068,7 +1113,7 @@ function App() {
       {modal?.type === "recipe" && (
         <Modal
           title={currentRecipe.name}
-          subtitle={`${currentRecipe.minutes} minutes · Cook ${currentRecipe.servings} servings · Curated demo recipe`}
+          subtitle={`${currentRecipe.minutes} minutes · Cook ${currentRecipe.servings} servings · ${currentRecipe.source === "local_ai" ? "Generated on your computer (" + currentRecipe.model + ")" : "Curated demo recipe"}`}
           onClose={() => setModal(null)}
           wide
         >
@@ -1275,9 +1320,9 @@ function App() {
             </p>
             <p>
               <strong>Working here:</strong> persistent pantry, quantity-aware
-              curated recipes, communities, friend invites, timed requests,
-              ingredient reservations, pickup chat, exchanges and cooking
-              records.
+              curated and local AI recipes, communities, friend invites, timed
+              requests, ingredient reservations, pickup chat, exchanges and
+              cooking records.
             </p>
             <p>
               <strong>Sample data:</strong> Alex, Jamie, Sam, initial groceries,
@@ -1286,9 +1331,8 @@ function App() {
             </p>
             <p>
               <strong>Still to connect:</strong> Google sign-in, live AI receipt
-              scanning and recipe generation, external push notifications and
-              scheduled morning delivery. This local demo is not production
-              authentication.
+              scanning, external push notifications and scheduled morning
+              delivery. This local demo is not production authentication.
             </p>
             <p>
               We track storage age, not expiration. Payments, buying/selling,

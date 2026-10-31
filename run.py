@@ -9,6 +9,7 @@ import sys
 import threading
 import venv
 import webbrowser
+from local_ai_runtime import start as start_local_ai, stop as stop_local_ai
 
 ROOT = Path(__file__).resolve().parent
 
@@ -77,18 +78,22 @@ def main():
     )
     if "--no-browser" not in sys.argv:
         threading.Timer(2, lambda: webbrowser.open(f"http://{host}:{port}")).start()
-    run(
-        [
-            str(python),
-            "-m",
-            "uvicorn",
-            "backend.main:app",
-            "--host",
-            host,
-            "--port",
-            str(port),
-        ]
-    )
+    local_process = start_local_ai()
+    try:
+        run(
+            [
+                str(python),
+                "-m",
+                "uvicorn",
+                "backend.main:app",
+                "--host",
+                host,
+                "--port",
+                str(port),
+            ]
+        )
+    finally:
+        stop_local_ai(local_process)
 
 
 if __name__ == "__main__":

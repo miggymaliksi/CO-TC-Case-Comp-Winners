@@ -2,6 +2,16 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Savor: Set up free local AI",
+      "type": "shell",
+      "command": "python3",
+      "windows": {"command": "python"},
+      "args": ["local_ai_runtime.py"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": [],
+      "presentation": {"reveal": "always", "panel": "dedicated"}
+    },
+    {
       "label": "Savor: Start local app",
       "type": "shell",
       "command": "python3",
