@@ -4,7 +4,7 @@ Good food. Shared. A local case-competition demo for pantry tracking, quantity-a
 
 Start with [Run and present Savor](docs/RUN_AND_PRESENT.md) for the VS Code steps, plain-language technical rundown, and two-minute mock demo script.
 
-The [project summary](docs/PROJECT_SUMMARY.md) covers the full workflow, implemented and missing features, AI recipe sources, and the free recipe API and its limits.
+The [project summary](docs/PROJECT_SUMMARY.md) covers the full workflow, implemented and missing features, AI recipe sources, and the local AI workflow.
 
 ## Phone-style Mac demo
 
@@ -56,19 +56,11 @@ For this prepared Mac checkout, the runtime and model are already downloaded int
 1. Install Ollama from [its official download page](https://ollama.com/download). No cloud account is needed.
 2. In VS Code, run **Savor: Set up free local AI**. It downloads `qwen3:4b` (about 2.5 GB) into this checkout's ignored `.local-ai/models` folder. Close an already running Ollama app first if you want Savor to manage its own model location and local-only settings.
 3. Run **Savor: Start local app**. The launcher starts the local model service when available and stops a service it owns when you stop Savor.
-4. Open **Recipes → Set preferences & generate**. Choose servings, diet and maximum cooking time, then **Save preferences & generate**. A valid result appears under **Your AI ideas** with its preference label. Changing pantry or settings removes older ideas from the current view; compatible older results remain under **Saved AI**. Matching pantry, preferences and inspiration can reuse a result for 15 minutes.
+4. Open **Recipes → Set preferences & generate**. Choose servings, diet and maximum cooking time, then **Save preferences & generate**. AI creates an idea from your pantry and preferences. A valid result appears under **Your AI ideas**, labeled with the settings used; compatible older results remain under **Saved AI**. Matching pantry and preferences reuse a result for 15 minutes. The external food API and recipe library have been removed.
 
 The model needs memory and processing power. On an 8 GB Mac, close unused apps and avoid running several generations in parallel. The first result may take a minute or two; invalid results are rejected and the curated recipes remain available. There is no per-request API fee, but local computation still uses electricity and disk space. A model is not downloaded by normal app startup; the setup task is explicit.
 
 For a smaller, less reliable model, set `SAVOR_LOCAL_MODEL=qwen3:1.7b` in the ignored `.env`, run setup, and restart. No remote inference URL can be configured through the app.
-
-## Free recipe library
-
-Open **Recipes → Recipe library**. Search by one ingredient or a meal name, then open a recipe for TheMealDB's photo, original measures, instructions and source link. **Set preferences & adapt** asks local AI to make a new pantry-based suggestion using the selected diet, servings and time.
-
-The backend uses [TheMealDB's free educational V1 API](https://www.themealdb.com/api.php), public test key **1**, with no account or payment. Only the search term or recipe ID goes to that service; pantry amounts, dietary settings, identities and chats are not sent. Photos load from TheMealDB. Responses are cached for 15 minutes, searches show up to 12 results, and network failures leave local records intact.
-
-Original API records have no verified servings/cooking time. Measures such as “1 tin” remain unchanged; the app does not invent coverage or deduct these directly. A separate validated AI adaptation enters Savor's normal quantity/cooking flow. Full automatic quantity normalization remains future work. Public app-store release requires supporter access under TheMealDB's terms; multi-ingredient filtering is premium and is not used here.
 
 ## Try the complete demo
 
@@ -90,14 +82,14 @@ Community chat is available by clicking a community card. Create a private group
 | Working locally | Still needs integration or later work |
 | --- | --- |
 | Pantry add/edit/remove, storage age, durable database | Production identity / Google sign-in |
-| Preferences-first local AI, free TheMealDB library/adaptations, curated recipes and quantity matching | Model quality and library measure/serving normalization |
+| Four curated recipes plus optional free local AI, quantity/unit matching, scaled servings and dietary/time filters | Larger-model quality tuning |
 | Private communities, friend invites, exact-quantity requests, accept/pass/cancel | Contacts or proximity discovery |
 | Inventory reservation, confirmed pickup, cooking records and duplicate protection | Live AI receipt extraction |
 | Private pickup and community chat; in-app request status updates | Scheduled morning delivery and external push notifications |
 | Leaderboard based on confirmed visible demo exchanges | Shared calendar, games and prizes |
 | Editable sample receipt with atomic import | Measured food-weight or dollar-savings estimates |
 
-The four curated recipes, illustrations, initial messages, accounts, and initial groceries are sample content. Locally generated recipes come from the downloaded model. Library recipes and photos come from TheMealDB; adaptations link their inspiration. The receipt screen explicitly labels its editable sample and does not upload or scan an image. Recipe ideas include curated matches and saved local AI suggestions; there is no background scheduler. No savings or user-adoption claims are fabricated. The 9,000-request figure is the team's aspiration, not achieved impact.
+The four curated recipes, illustrations, initial messages, accounts, and initial groceries are sample content. New recipes labeled locally generated are produced by the downloaded model. The receipt screen explicitly labels its editable sample and does not upload or scan an image. Recipe ideas include curated matches and saved local AI suggestions; there is no background scheduler. No savings or user-adoption claims are fabricated. The 9,000-request figure is the team's aspiration, not achieved impact.
 
 **Scope:** storage age instead of predicted expiration. No food-safety classification, payments, buying/selling, deliveries, or public social feed.
 
@@ -140,7 +132,7 @@ npm run dev
 
 Use the Vite URL printed by the second terminal. For a custom API port, update the development proxy in `frontend/vite.config.js`.
 
-The focused tests cover persistence, ownership/privacy, quantities and units, serving scaling, missing ingredients, concurrent acceptance, expiry/decline fallback, reservation return, atomic receipt import, friend invites, private pickup chat, duplicate pickup/cooking, local-model result validation, private recipe history, cache reuse, rejection of cloud model names, preference/context changes, library errors/cache/source handling and source-inspired generation.
+The focused tests cover persistence, ownership/privacy, quantities and units, serving scaling, missing ingredients, concurrent acceptance, expiry/decline fallback, reservation return, atomic receipt import, friend invites, private pickup chat, duplicate pickup/cooking, local-model result validation, private recipe history, cache reuse, and rejection of cloud model names.
 
 ## Share changes safely
 

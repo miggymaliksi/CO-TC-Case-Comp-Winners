@@ -651,7 +651,7 @@ export function ChatModal({ user, community, request, close }) {
   );
 }
 
-export function SettingsForm({ user, close, busy, save, inspiration }) {
+export function SettingsForm({ user, close, busy, save }) {
   const [servings, setServings] = useState(user.servings),
     [diet, setDiet] = useState(user.diet),
     [minutes, setMinutes] = useState(user.max_minutes),
@@ -659,11 +659,7 @@ export function SettingsForm({ user, close, busy, save, inspiration }) {
   return (
     <Modal
       title="What sounds good?"
-      subtitle={
-        inspiration
-          ? `Adapt ${inspiration.name} to your preferences and pantry.`
-          : "Choose your preferences. AI will use them with your pantry."
-      }
+      subtitle="Choose your preferences. AI will use them with your pantry."
       onClose={close}
     >
       <form

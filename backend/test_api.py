@@ -525,131 +525,34 @@ def test_quick_gluten_free_shortlist_uses_compatible_candidates():
     assert names == {"tomatoes", "spinach", "olive oil"}
 
 
-def mock_library(monkeypatch):
-    import httpx
-
-    monkeypatch.setattr(main.recipe_library, "_cache", {})
-    calls = []
-
-    def get(url, **kwargs):
-        calls.append((url, kwargs))
-        return httpx.Response(
-            200,
-            request=httpx.Request("GET", url),
-            json={
-                "meals": [
-                    {
-                        "idMeal": "52771",
-                        "strMeal": "Tomato dinner",
-                        "strCategory": "Vegetarian",
-                        "strArea": "Italian",
-                        "strMealThumb": "https://www.themealdb.com/images/media/meals/example.jpg",
-                        "strIngredient1": "tomatoes",
-                        "strMeasure1": "1 tin",
-                        "strIngredient2": "spinach",
-                        "strMeasure2": "a handful",
-                        "strInstructions": "Cook the vegetables.\nServe warm.",
-                    }
-                ]
-            },
-        )
-
-    monkeypatch.setattr(main.recipe_library.httpx, "get", get)
-    return calls
-
-
-def test_free_library_search_cache_and_original_measures(clients, monkeypatch):
-    a, _, _ = clients
-    calls = mock_library(monkeypatch)
-    r = a.get(
-        "/api/recipes/library/search", params={"query": "tomatoes", "by": "ingredient"}
-    )
-    assert r.status_code == 200, r.text
-    assert not r.json()["cached"]
-    assert (
-        r.json()["recipes"][0]["source_url"] == "https://www.themealdb.com/meal/52771"
-    )
-    assert a.get("/api/recipes/library/search", params={"query": "tomatoes"}).json()[
-        "cached"
-    ]
-    assert len(calls) == 1
-    url, args = calls[0]
-    assert url == "https://www.themealdb.com/api/json/v1/1/filter.php"
-    assert args["params"] == {"i": "tomatoes"}
-    assert args["trust_env"] is False and args["follow_redirects"] is False
-    assert "Authorization" not in args.get("headers", {})
-    full = a.get("/api/recipes/library/52771").json()
-    assert full["ingredients"][0]["measure"] == "1 tin"
-    assert full["ingredients"][1]["measure"] == "a handful"
-    assert "servings" not in full and "minutes" not in full and "coverage" not in full
-
-
-def test_library_failure_and_invalid_ids_preserve_pantry(clients, monkeypatch):
-    import httpx
-
-    a, _, _ = clients
-    before = state(a)["pantry"]
-    monkeypatch.setattr(main.recipe_library, "_cache", {})
-
-    def offline(*args, **kwargs):
-        raise httpx.ConnectError("offline")
-
-    monkeypatch.setattr(main.recipe_library.httpx, "get", offline)
-    assert (
-        a.get("/api/recipes/library/search", params={"query": "tomatoes"}).status_code
-        == 503
-    )
-    assert a.get("/api/recipes/library/nope").status_code == 404
-    assert (
-        a.get("/api/recipes/library/search", params={"query": "x"}).status_code == 422
-    )
-    assert state(a)["pantry"] == before
-
-
-def test_library_inspiration_is_adapted_by_local_ai_and_attributed(
+def test_generation_uses_preferences_and_local_model_without_recipe_api(
     clients, monkeypatch
 ):
     import json
 
-    a, b, _ = clients
-    mock_library(monkeypatch)
+    a, _, _ = clients
     calls = mock_model(monkeypatch)
+    preferences = {"servings": 2, "diet": "Vegan", "max_minutes": 10}
+    assert a.patch("/api/settings", json=preferences).status_code == 200
     before = state(a)["pantry"]
-    response = a.post("/api/recipes/generate", json={"inspiration_id": "52771"})
-    assert response.status_code == 200, response.text
-    identifier = response.json()["ids"][0]
-    recipe = next(r for r in state(a)["recipes"] if r["id"] == identifier)
-    assert recipe["source"] == "local_ai"
-    assert recipe["matches_current_context"]
-    assert recipe["inspired_by"] == {
-        "id": "52771",
-        "name": "Tomato dinner",
-        "url": "https://www.themealdb.com/meal/52771",
-    }
-    sent = json.loads(calls[0][1]["json"]["messages"][1]["content"])
-    assert sent["inspiration"]["name"] == "Tomato dinner"
-    assert a.post("/api/recipes/generate", json={"inspiration_id": "52771"}).json()[
-        "cached"
-    ]
-    assert len(calls) == 1
-    assert state(a)["pantry"] == before
-    assert not any(r["id"] == identifier for r in state(b)["recipes"])
 
-
-def test_library_requires_session_and_limits_image_hosts(clients):
-    with TestClient(main.app) as anonymous:
-        assert (
-            anonymous.get(
-                "/api/recipes/library/search", params={"query": "tomatoes"}
-            ).status_code
-            == 401
+    def no_external_lookup(*args, **kwargs):
+        raise AssertionError(
+            "Recipe generation must not request an external recipe API."
         )
-    recipe = main.recipe_library._summary(
-        {
-            "idMeal": "52771",
-            "strMeal": "Example",
-            "strMealThumb": "https://untrusted.example/image.jpg",
-        }
+
+    monkeypatch.setattr(main.local_ai.httpx, "get", no_external_lookup)
+    response = a.post("/api/recipes/generate", json={})
+    assert response.status_code == 200, response.text
+    assert len(calls) == 1 and calls[0][0] == "http://127.0.0.1:11434/api/chat"
+    sent = json.loads(calls[0][1]["json"]["messages"][1]["content"])
+    assert sent["preferences"] == preferences and "inspiration" not in sent
+    recipe = next(
+        r for r in state(a)["recipes"] if r["id"] == response.json()["ids"][0]
     )
-    assert recipe["image_url"] is None
-    assert recipe["source_url"] == "https://www.themealdb.com/meal/52771"
+    assert recipe["generated_for"] == preferences
+    assert recipe["matches_current_context"] and "inspired_by" not in recipe
+    assert not any(
+        "/recipes/library" in getattr(route, "path", "") for route in main.app.routes
+    )
+    assert state(a)["pantry"] == before

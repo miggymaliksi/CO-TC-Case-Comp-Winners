@@ -40,7 +40,7 @@ from .models import (
 )
 from .recipes import RECIPES, UNITS, convert, amount_available, match_recipe
 from .migrations import migrate
-from . import local_ai, recipe_library
+from . import local_ai
 
 DATABASE = os.getenv("SAVOR_DATABASE_URL", "sqlite:///./savor.db")
 DEMO = os.getenv("SAVOR_DEMO_MODE", "true").lower() == "true"
@@ -401,7 +401,7 @@ def recipe_context(user, items):
 def recipe_context_hash(context, model):
     return hashlib.sha256(
         json.dumps(
-            {"context": context, "model": model, "prompt_version": 3},
+            {"context": context, "model": model, "prompt_version": 5},
             sort_keys=True,
         ).encode()
     ).hexdigest()
@@ -464,45 +464,11 @@ def get_recipes(user: User = Depends(current_user), db: Session = Depends(databa
     return recipes_for(user, pantry(db, user.id), db)
 
 
-@app.get("/api/recipes/library/search")
-def search_library(
-    query: str, by: str = "ingredient", user: User = Depends(current_user)
-):
-    try:
-        return recipe_library.search(query, by)
-    except recipe_library.LibraryError as exc:
-        raise HTTPException(exc.status, str(exc)) from exc
-
-
-@app.get("/api/recipes/library/{identifier}")
-def library_detail(identifier: str, user: User = Depends(current_user)):
-    try:
-        return recipe_library.detail(identifier)
-    except recipe_library.LibraryError as exc:
-        raise HTTPException(exc.status, str(exc)) from exc
-
-
-class GenerationInput(BaseModel):
-    inspiration_id: Optional[str] = Field(default=None, pattern=r"^\d{1,12}$")
-
-
 @app.post("/api/recipes/generate")
 def generate_dinner(
-    data: Optional[GenerationInput] = None,
     user: User = Depends(current_user),
     db: Session = Depends(database),
 ):
-    inspiration = None
-    if data and data.inspiration_id:
-        # Release the initial mutation lock while fetching public recipe data.
-        db.commit()
-        try:
-            inspiration = recipe_library.detail(data.inspiration_id)
-        except recipe_library.LibraryError as exc:
-            raise HTTPException(exc.status, str(exc)) from exc
-        if DATABASE.startswith("sqlite"):
-            db.execute(text("BEGIN IMMEDIATE"))
-        db.refresh(user)
     items = pantry(db, user.id)
     if len(items) < 2:
         raise HTTPException(
@@ -519,13 +485,6 @@ def generate_dinner(
     except local_ai.LocalAIError as exc:
         raise HTTPException(exc.status, str(exc)) from exc
     base_hash = recipe_context_hash(context, selected_model)
-    if inspiration:
-        context["inspiration"] = {
-            "id": inspiration["id"],
-            "name": inspiration["name"],
-            "ingredients": inspiration["ingredients"][:12],
-            "instructions": inspiration["instructions"][:1000],
-        }
     context_hash = recipe_context_hash(context, selected_model)
     cached = list(
         db.scalars(
@@ -565,12 +524,6 @@ def generate_dinner(
     for recipe in generated:
         recipe["generated_for"] = context["preferences"]
         recipe["context_key"] = base_hash
-        if inspiration:
-            recipe["inspired_by"] = {
-                "id": inspiration["id"],
-                "name": inspiration["name"],
-                "url": inspiration["source_url"],
-            }
         recipe_id = "ai-" + uuid.uuid4().hex
         ids.append(recipe_id)
         db.add(
