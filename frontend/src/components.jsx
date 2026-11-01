@@ -651,15 +651,19 @@ export function ChatModal({ user, community, request, close }) {
   );
 }
 
-export function SettingsForm({ user, close, busy, save }) {
+export function SettingsForm({ user, close, busy, save, inspiration }) {
   const [servings, setServings] = useState(user.servings),
     [diet, setDiet] = useState(user.diet),
     [minutes, setMinutes] = useState(user.max_minutes),
     [err, setErr] = useState("");
   return (
     <Modal
-      title="Make it yours"
-      subtitle="Recipes that fit your table and your day."
+      title="What sounds good?"
+      subtitle={
+        inspiration
+          ? `Adapt ${inspiration.name} to your preferences and pantry.`
+          : "Choose your preferences. AI will use them with your pantry."
+      }
       onClose={close}
     >
       <form
@@ -676,6 +680,7 @@ export function SettingsForm({ user, close, busy, save }) {
           How many at your table?
           <select
             value={servings}
+            disabled={busy}
             onChange={(e) => setServings(e.target.value)}
           >
             {Array.from({ length: 8 }, (_, i) => (
@@ -687,7 +692,11 @@ export function SettingsForm({ user, close, busy, save }) {
         </label>
         <label className="field">
           Dietary preference
-          <select value={diet} onChange={(e) => setDiet(e.target.value)}>
+          <select
+            value={diet}
+            disabled={busy}
+            onChange={(e) => setDiet(e.target.value)}
+          >
             {["All", "Vegetarian", "Vegan", "Gluten-free"].map((d) => (
               <option key={d}>{d}</option>
             ))}
@@ -695,7 +704,11 @@ export function SettingsForm({ user, close, busy, save }) {
         </label>
         <label className="field">
           Maximum cooking time
-          <select value={minutes} onChange={(e) => setMinutes(e.target.value)}>
+          <select
+            value={minutes}
+            disabled={busy}
+            onChange={(e) => setMinutes(e.target.value)}
+          >
             {[10, 15, 20, 30, 45, 60, 90, 120].map((m) => (
               <option key={m} value={m}>
                 {m} minutes
@@ -704,8 +717,9 @@ export function SettingsForm({ user, close, busy, save }) {
           </select>
         </label>
         <p className="fine-print">
-          Ingredient quantities scale with your serving size. Dietary tags
-          describe the curated recipes; check ingredient labels for allergies.
+          AI will create an idea for these servings, diet and cooking time. Your
+          pantry stays unchanged. Check individual ingredient labels for dietary
+          needs.
         </p>
         {err && (
           <p className="form-error" role="alert">
@@ -714,8 +728,8 @@ export function SettingsForm({ user, close, busy, save }) {
         )}
         <div className="modal-bottom">
           <button className="button primary" disabled={busy}>
-            Save preferences
-            <Check size={16} />
+            {busy ? "Saving preferences…" : "Save preferences & generate"}
+            <Sprout size={16} />
           </button>
         </div>
       </form>

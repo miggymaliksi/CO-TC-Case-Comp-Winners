@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, Menu, screen } = require("electron");
+const { app, BrowserWindow, dialog, Menu, screen, shell } = require("electron");
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -163,7 +163,23 @@ async function openWindow() {
     },
   });
   window.once("ready-to-show", showWindow);
-  window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const source = new URL(url);
+      if (
+        source.protocol === "https:" &&
+        source.host === "www.themealdb.com" &&
+        /^\/meal\/\d{1,12}$/.test(source.pathname) &&
+        !source.search &&
+        !source.hash &&
+        !source.username &&
+        !source.password
+      ) {
+        shell.openExternal(source.href).catch(() => {});
+      }
+    } catch {}
+    return { action: "deny" };
+  });
   const session = window.webContents.session;
   session.setPermissionRequestHandler((_contents, permission, callback) => {
     callback(permission === "clipboard-sanitized-write");
@@ -184,7 +200,7 @@ async function openWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'",
+          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.themealdb.com; connect-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'",
         ],
       },
     });
