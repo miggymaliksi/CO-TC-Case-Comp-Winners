@@ -19,7 +19,7 @@ Savor keeps track of groceries, finds recipes that match their quantities, and l
 5. **Pickup:** Alex confirms receiving it. The reservation transfers once into Alex's pantry and keeps its original storage date. Cancelling before pickup returns reserved stock to Jamie.
 6. **Cooking:** once all quantities are covered, Alex confirms cooking. The server deducts the recipe quantities and records the meal. Duplicate confirmations cannot repeat the inventory effect.
 
-The two-minute presentation shows the pantry, an 80% recipe, a missing-ingredient request, and a saved local AI recipe. Use [DEMO_GUIDE.md](DEMO_GUIDE.md) for the timed script. Save the complete two-account exchange for questions afterward.
+The two-minute presentation shows a prepared local AI result, an 80% curated toast recipe, Alex sending a request for 2 slices of bread to PBL, and Sam accepting it. Use [DEMO_GUIDE.md](DEMO_GUIDE.md) for the 1:45 script and repeatable rehearsal steps. Save confirmed pickup and cooking for questions afterward.
 
 ## How the technical pieces connect
 

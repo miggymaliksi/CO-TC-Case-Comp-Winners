@@ -6,25 +6,38 @@ Open the built **Savor.app**, or in VS Code choose **Terminal → Run Task → S
 
 The bottom buttons are **Home, Pantry, Recipes, Community, Impact**. The round letter at the top right opens sample accounts and preferences. Choose **Alex**, with **2 servings**, before this walkthrough. Alex, Jamie and Sam are demo identities that let one presenter show both sides of a request.
 
-Practice changes are saved. There is no automatic reset between rehearsals. Check quantities before starting. The Sunday tomato pasta needs 200 g pasta, 300 g tomatoes, 20 ml olive oil, 5 g basil and 1 clove garlic. For the missing-ingredient story, Alex should have those amounts except garlic, and Jamie should have at least 1 clove. Use the pantry forms to prepare sample quantities if a previous rehearsal used them up.
+Practice changes are saved. There is no automatic reset between rehearsals. For the bread request below, Alex needs 150 g tomatoes, 10 ml olive oil, 3 g basil and 0.5 lemon, with no bread; Sam needs at least 2 slices of bread. These conditions were checked in the current local demo. Use the pantry forms to prepare sample quantities if a previous rehearsal changed them. Do this before preparing the AI result.
+
+## Demo requesting an ingredient
+
+1. Use the top-right round account button to choose **Alex**. Keep **2 servings**, **All** diets and **60 minutes** maximum so the recipe is visible.
+2. Open **Recipes → All ideas → Garden tomato toast**. It should show **80%** and **Bread · missing 2 slice**.
+3. Click **Ask** beside Bread. The form fills in **bread**, **2** and **slice**, and links the request to this recipe.
+4. Choose **Community · PBL** and **In 30 minutes**, then **Send request**. The app opens **Community → My requests** with the pending request. Send it during the presentation so the deadline is fresh.
+5. Switch to **Sam** using the top-right account button. Open **Community → Requests** and click **I can share** on Alex's bread request. It becomes **Accepted**; two slices are reserved from Sam's available pantry.
+6. For Q&A, switch back to **Alex → Community → My requests → Confirm pickup**. The bread transfers once into Alex's pantry, and the toast recipe becomes **100%** covered. Acceptance alone does not transfer it.
+
+**Repeat a rehearsal:** stop before Confirm pickup and choose **Cancel** on the accepted request as Alex or Sam. The two reserved slices return to Sam, leaving Alex short of bread for another run. Start the next run as Alex. Cancellation preserves the request history; it does not reset the database. If you already confirmed pickup, prepare the sample pantry again before another rehearsal.
+
+**Quick alternative:** **Community → Request an ingredient** opens the same form without a recipe. You can request **1 clove of garlic** from **PBL**, then switch to **Jamie** to accept it if Jamie has a clove available. A request made this way is not linked to a recipe.
 
 ## The timed demo
 
 
-Before the timer, generate one valid idea as Alex with **2 servings** and your chosen diet/time. Keep the pantry and settings unchanged. A matching request can reuse it for 15 minutes; say honestly that the result was generated earlier. Practice changes persist.
+Before the timer, use **Alex**, **2 servings**, **All** diets and **60 minutes** maximum. Prepare one valid local AI result, then keep the pantry unchanged. Check that **Garden tomato toast** shows **80%**, with **2 slices of bread** missing, and that **Sam** has at least 2 slices. The AI result and the curated sharing example are labeled separately. Practice changes persist.
 
-Aim for **1:40**, keeping **20 seconds for slower clicks**.
+Aim for **1:45**, keeping **15 seconds for slower clicks**. The timed demo includes sending and accepting a real request in the local sample-account app.
 
 | Time | Show / do | Say aloud |
 | --- | --- | --- |
 | **0:00–0:10** | Home | “Savor helps you cook with what you have and borrow the small ingredients you're missing.” |
-| **0:10–0:25** | Pantry; point to an amount and storage age | “Here's Alex's pantry. We track amounts and storage dates, and these records stay saved after closing the app.” |
-| **0:25–0:45** | Recipes → Set preferences & generate. Show the prepared servings, diet and time, then Save preferences & generate. | “I choose servings, diet and time. AI uses these preferences and my pantry to create a meal idea.” |
-| **0:45–1:10** | Your AI ideas → open the prepared result; point to its preferences, ingredients and method | “This idea was generated earlier on this computer. Repeating the same settings reuses it. Python checks the quantities and preferences before it appears.” |
-| **1:10–1:30** | Show the result's pantry coverage, then Community | “The recipe shows how much my pantry covers. When something is missing, I can request a small amount from my community.” |
-| **1:30–1:40** | Keep the current screen visible | “That's Savor: turn what you already have into a meal, with a little help from your community.” |
+| **0:10–0:35** | Recipes → Your AI ideas. Point to the preference summary and open the prepared result, then close it. | “I choose servings, diet and time. Local AI creates a meal idea from my pantry. This result was generated earlier on this computer.” |
+| **0:35–0:55** | All ideas → Garden tomato toast. Point to 80% and the missing bread. | “For sharing, this curated sample is missing two slices of bread. Four of its five ingredient lines are already covered.” |
+| **0:55–1:20** | Ask beside Bread → check 2 slice, Community · PBL and In 30 minutes → Send request. | “I request just the missing amount from my private community, with a deadline. It now appears in My requests.” |
+| **1:20–1:40** | Top-right account button → Sam → Community → Requests → I can share on Alex's bread request. | “Switching sample accounts shows the other side. Sam accepts, and the app reserves two slices until pickup.” |
+| **1:40–1:45** | Keep the accepted request visible. | “A little help from your community makes dinner possible.” |
 
-If behind at 1:30, close from the current screen. Keep fresh generation, account switching and the full pickup/cooking flow for Q&A. If generation is slow or rejected, show a saved AI result and identify it honestly; do not present a curated sample as AI output.
+If behind at 1:20, finish on Alex's sent request and explain that a neighbor can accept it. Keep fresh AI generation, pickup chat and confirmed pickup for Q&A. Do not present the curated sharing example as AI output.
 
 
 ## Prepare the AI example before presenting
@@ -33,11 +46,11 @@ Open **Recipes → Set preferences & generate**, choose servings, diet and time,
 
 ## Optional walkthrough for questions afterward
 
-To demonstrate the full exchange, switch to **Jamie** using the top-right account button. Open **Community → Requests → I can share** on Alex's garlic request. Jamie's clove is reserved. Show **Pickup chat**, switch back to **Alex**, and choose **Confirm pickup**. The clove transfers once, retaining its storage date.
+After Sam accepts the bread request, show **Pickup chat**, switch back to **Alex**, and choose **Community → My requests → Confirm pickup**. The two slices transfer once, retaining their storage date. These account switches show both sides in the same local database; separate computers do not share this demo database.
 
-Return to **Recipes → All ideas → Sunday tomato pasta**. It should show **100%**. Click **I cooked this** to deduct the recipe quantities, then open **Impact** to show recorded meals and exchanges. Those counts are saved actions, not measured dollar savings or food-waste reduction.
+Return to **Recipes → All ideas → Garden tomato toast**. It should show **100%**. Click **I cooked this** to deduct the recipe quantities, then open **Impact** to show recorded meals and exchanges. Those counts are saved actions, not measured dollar savings or food-waste reduction.
 
-For a persistence example, edit a pantry quantity, save, and reopen the card. Choose an ingredient such as carrots that does not affect the pasta example. Do pantry edits outside the timed demo: changing stock moves the current AI result into saved history.
+For a persistence example, edit a pantry quantity, save, and reopen the card. Choose an ingredient such as carrots that does not affect the toast example. Do pantry edits outside the timed demo: changing stock moves the current AI result into saved history.
 
 ## The technical explanation to remember
 

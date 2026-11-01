@@ -139,20 +139,20 @@ No paid AI plan or API account is required. After local model setup, generation 
 
 ## Two-minute mock demo
 
-Before the timer, generate one valid idea as Alex with **2 servings** and your chosen diet/time. Keep the pantry and settings unchanged. A matching request can reuse it for 15 minutes; say honestly that the result was generated earlier. Practice changes persist.
+Before the timer, use **Alex**, **2 servings**, **All** diets and **60 minutes** maximum. Prepare one valid local AI result, then keep the pantry unchanged. Check that **Garden tomato toast** shows **80%**, with **2 slices of bread** missing, and that **Sam** has at least 2 slices. The AI result and the curated sharing example are labeled separately. Practice changes persist.
 
-Aim for **1:40**, keeping **20 seconds for slower clicks**.
+Aim for **1:45**, keeping **15 seconds for slower clicks**. The timed demo includes sending and accepting a real request in the local sample-account app.
 
 | Time | Show / do | Say aloud |
 | --- | --- | --- |
 | **0:00–0:10** | Home | “Savor helps you cook with what you have and borrow the small ingredients you're missing.” |
-| **0:10–0:25** | Pantry; point to an amount and storage age | “Here's Alex's pantry. We track amounts and storage dates, and these records stay saved after closing the app.” |
-| **0:25–0:45** | Recipes → Set preferences & generate. Show the prepared servings, diet and time, then Save preferences & generate. | “I choose servings, diet and time. AI uses these preferences and my pantry to create a meal idea.” |
-| **0:45–1:10** | Your AI ideas → open the prepared result; point to its preferences, ingredients and method | “This idea was generated earlier on this computer. Repeating the same settings reuses it. Python checks the quantities and preferences before it appears.” |
-| **1:10–1:30** | Show the result's pantry coverage, then Community | “The recipe shows how much my pantry covers. When something is missing, I can request a small amount from my community.” |
-| **1:30–1:40** | Keep the current screen visible | “That's Savor: turn what you already have into a meal, with a little help from your community.” |
+| **0:10–0:35** | Recipes → Your AI ideas. Point to the preference summary and open the prepared result, then close it. | “I choose servings, diet and time. Local AI creates a meal idea from my pantry. This result was generated earlier on this computer.” |
+| **0:35–0:55** | All ideas → Garden tomato toast. Point to 80% and the missing bread. | “For sharing, this curated sample is missing two slices of bread. Four of its five ingredient lines are already covered.” |
+| **0:55–1:20** | Ask beside Bread → check 2 slice, Community · PBL and In 30 minutes → Send request. | “I request just the missing amount from my private community, with a deadline. It now appears in My requests.” |
+| **1:20–1:40** | Top-right account button → Sam → Community → Requests → I can share on Alex's bread request. | “Switching sample accounts shows the other side. Sam accepts, and the app reserves two slices until pickup.” |
+| **1:40–1:45** | Keep the accepted request visible. | “A little help from your community makes dinner possible.” |
 
-If behind at 1:30, close from the current screen. Keep fresh generation, account switching and the full pickup/cooking flow for Q&A. If generation is slow or rejected, show a saved AI result and identify it honestly; do not present a curated sample as AI output.
+If behind at 1:20, finish on Alex's sent request and explain that a neighbor can accept it. Keep fresh AI generation, pickup chat and confirmed pickup for Q&A. Do not present the curated sharing example as AI output.
 
 ## Questions to be ready for
 
