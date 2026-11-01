@@ -1,0 +1,17 @@
+.venv/
+node_modules/
+frontend/dist/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.local
+.local-ai/
+.desktop-data/
+desktop/.stage/
+desktop/release/
+desktop/savor-logo.png
+.DS_Store
