@@ -23,6 +23,7 @@ function showWindow() {
     if (window.isMinimized()) window.restore();
     window.show();
     window.focus();
+    if (process.platform === "darwin") app.focus({ steal: true });
   }
 }
 
@@ -161,7 +162,7 @@ async function openWindow() {
       webviewTag: false,
     },
   });
-  window.once("ready-to-show", () => window.show());
+  window.once("ready-to-show", showWindow);
   window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   const session = window.webContents.session;
   session.setPermissionRequestHandler((_contents, permission, callback) => {
@@ -192,8 +193,10 @@ async function openWindow() {
 }
 
 if (!app.requestSingleInstanceLock()) {
+  console.log("Savor is already open. Bringing the existing window forward.");
   app.quit();
 } else {
+  console.log("Opening Savor. Close its window when you are finished.");
   app.on("second-instance", showWindow);
   app.on("activate", showWindow);
   // Gracefully stop owned services when a development terminal is interrupted too.
