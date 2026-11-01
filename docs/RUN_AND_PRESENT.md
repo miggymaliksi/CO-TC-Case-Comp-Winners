@@ -25,6 +25,8 @@ python3 run.py --desktop
 
 Your pantry and practice changes stay saved in the local `savor.db` file. Keep this project folder in place. No paid AI API account or key is needed for this version.
 
+**If the terminal says `bquote>`:** press **Control + C**, then use the VS Code **Terminal → Run Task** menu. Paste only command text when using a terminal; omit Markdown markers such as three backticks and `sh`. “Run Task” is a menu item, not a command. If Savor is already open, another launch brings that window forward and prints an explanatory message.
+
 ## 2. The technical rundown
 
 | Part | Explain it like this |

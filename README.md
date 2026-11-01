@@ -4,6 +4,8 @@ Good food. Shared. A local case-competition demo for pantry tracking, quantity-a
 
 Start with [Run and present Savor](docs/RUN_AND_PRESENT.md) for the VS Code steps, plain-language technical rundown, and two-minute mock demo script.
 
+The [project summary](docs/PROJECT_SUMMARY.md) covers the full workflow, implemented and missing features, AI recipe sources, and the recipe API recommendation.
+
 ## Phone-style Mac demo
 
 In VS Code, choose **Terminal → Run Task → Savor: Open phone demo**. Or enter:
