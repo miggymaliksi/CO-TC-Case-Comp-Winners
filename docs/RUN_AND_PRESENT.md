@@ -36,7 +36,7 @@ Your pantry and practice changes stay saved in the local `savor.db` file. Keep t
 | **Vite** | The tool that builds the React code into files the app can display. |
 | **FastAPI / Python** | The backend: checks inputs and account access, calculates recipe matches, and controls requests and inventory changes. |
 | **SQLite / SQLAlchemy** | SQLite saves records in a local database file. SQLAlchemy connects our Python data models to those records. |
-| **Ollama / Qwen3 4B** | Ollama runs a downloaded, pretrained AI model on this computer. Qwen suggests recipes from pantry data. |
+| **Ollama / Qwen3 4B** | Ollama runs a downloaded, pretrained AI model on this computer. Qwen creates meal ideas from the pantry and selected preferences. |
 
 ### Follow one button click
 
@@ -52,9 +52,13 @@ A **transaction** makes related database updates succeed together or roll back t
 
 ### Where AI is used
 
-Python sends pantry ingredients and preferences to the local model, requests a recipe in a defined structure, then checks servings, quantities, ingredient names and coverage. Only a valid result is saved. The model cannot directly alter inventory. Matching saved suggestions can be reused for 15 minutes when the pantry and preferences are unchanged.
+Choose **Recipes → Set preferences & generate**. Saving servings, diet and time starts local AI generation. Python sends compatible pantry ingredients and preferences to the local model, then checks the recipe structure, servings, quantities, ingredient names and coverage. **Your AI ideas** shows results for the current settings and pantry; **Saved AI** retains compatible older ideas. Only a valid result is saved. The model cannot directly alter inventory. Matching saved suggestions can be reused for 15 minutes when the pantry and preferences are unchanged.
 
 We integrated a pretrained model; we did not train one. There are no per-request API fees, but generation uses memory and can take a minute or two. Validation is limited and does not guarantee recipe quality. Chat updates use periodic refreshes, rather than WebSockets: every four seconds for an open chat and eight seconds for general app state.
+
+### The free recipe API
+
+**Recipes → Recipe library** searches TheMealDB by one ingredient or a meal name. Original recipes have photos, ingredient measures and source links. **Set preferences & adapt** asks local AI for a new version using your pantry. The provider does not give verified servings or cooking time, so original measures are not directly deducted from inventory. Searches need internet; local inference needs no paid API. TheMealDB public key 1 is for development/education; public app-store release needs separate supporter access.
 
 ### Be clear about the prototype
 
@@ -62,20 +66,22 @@ This is a Mac app with a phone-style interface and three sample accounts. Each c
 
 ## 3. Your two-minute mock demo
 
-**Prepare before starting the timer:** open Home as **Alex**, use **2 servings**, and check that **Sunday tomato pasta** shows **80%** with garlic missing. Have a saved generated recipe available under **Local AI**. Practice changes persist, so check these again before each rehearsal.
 
-Aim for **1 minute 40 seconds**, leaving **20 seconds for slower clicks**. Read the “Say” column while following the clicks.
+Before the timer, generate an idea for Alex with **2 servings**, your chosen diet and time. Keep pantry/preferences unchanged so it stays in **Your AI ideas**. Check the library while online. Fresh generation can take most of the demo slot; show a saved result honestly. Practice changes persist.
 
-| Time | Click / show | Say aloud |
+Aim for **1:40**, keeping **20 seconds for slower clicks**.
+
+| Time | Show / do | Say aloud |
 | --- | --- | --- |
 | **0:00–0:10** | Home | “Savor helps you cook with what you have and borrow the small ingredients you're missing.” |
-| **0:10–0:25** | Pantry. Point to an ingredient's amount and storage age. | “Here's Alex's pantry. We track amounts and storage dates, and the records stay saved after closing the app.” |
-| **0:25–0:55** | Recipes → All ideas → Sunday tomato pasta. Scroll to garlic → Ask. Check **1 clove**, **Community · PBL**, **In 30 minutes**, then **Send request**. | “This pasta matches four of five ingredients. Garlic is missing, so it shows 80%. I can ask my community for just one clove.” |
-| **0:55–1:10** | Close a dialog if needed. Community → Requests. Show the new request. | “The request is now in Alex's community. A neighbor can accept it, and confirmed pickup updates both pantries.” |
-| **1:10–1:30** | Recipes → Local AI. Open a saved generated recipe. | “This recipe was generated earlier on this computer from the pantry. We use a local AI model without paid API calls, and our code checks the result before showing it.” |
-| **1:30–1:40** | Leave the recipe visible. | “That's Savor: turn what you already have into a meal, with a little help from your community.” |
+| **0:10–0:25** | Pantry; point to an amount and storage age | “Here's Alex's pantry. We track amounts and storage dates, and these records stay saved after closing the app.” |
+| **0:25–0:45** | Recipes → Set preferences & generate; show the controls, then close the dialog | “I choose servings, diet and time. Saving these preferences asks AI to create a meal using this pantry.” |
+| **0:45–1:10** | Your AI ideas → open the prepared result, show its preference label and coverage | “I generated this earlier on this computer. Python checked the quantities and preferences. The model suggests a meal; it cannot change our groceries.” |
+| **1:10–1:30** | Close result → Recipe library → open a recipe | “We also search TheMealDB for real recipes with sources. Set preferences and adapt makes a new pantry-based version. Missing ingredients can be requested through our community flow.” |
+| **1:30–1:40** | Keep the recipe visible | “That's Savor: turn what you already have into a meal, with a little help from your community.” |
 
-If you reach **1:30** before the AI screen, give the closing sentence from the current screen. Save account switching, pickup, cooking and technical details for questions afterward. For this short demo, show a saved AI recipe and say it was generated earlier; fresh generation can use most of the time slot.
+If behind at 1:30, close from the current screen. Keep fresh generation, account switching and the complete request/pickup/cooking flow for Q&A. If the library is offline, use the saved AI result and explain the external search needs internet.
+
 
 ## Further reading
 

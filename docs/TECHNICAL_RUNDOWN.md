@@ -2,7 +2,7 @@
 
 ## The 30-second version
 
-Savor runs in a phone-style Mac window built with Electron. Inside it, React displays the interface, a Python backend applies the app's rules, and SQLite saves the records. The backend matches recipes to actual grocery quantities and controls ingredient requests and inventory updates. For live recipe suggestions, we use a small Qwen model through Ollama on the computer. The model proposes a recipe, but our code checks it before showing it and never lets the model change inventory directly.
+Savor runs in a phone-style Mac window built with Electron. Inside it, React displays the interface, a Python backend applies the app's rules, and SQLite saves the records. The backend matches recipes to actual grocery quantities and controls ingredient requests and inventory updates. Users choose servings, diet and cooking time before generating meal ideas. TheMealDB adds an external recipe library with source links. For personalized suggestions and adaptations, we use a small Qwen model through Ollama on the computer. The model proposes a recipe, but our code checks it before showing it and never lets the model change inventory directly.
 
 ## The system diagram
 
@@ -15,6 +15,7 @@ flowchart LR
     P -->|Pantry and preferences| O[Ollama / local Qwen3 model]
     O -->|Structured recipe suggestion| P
     P -->|Validated result| R
+    P <-->|Recipe search and lookup| T[TheMealDB educational API]
 ```
 
 The AI connection goes only to `127.0.0.1:11434` on this computer. The Mac app starts Python on a free loopback port, waits for its health check, then loads that address inside its own window. The browser development launcher uses `127.0.0.1:8000` by default. These addresses stay on this computer.
@@ -59,18 +60,28 @@ The backend converts compatible units: kilograms to grams, for example. It does 
 
 Recipes are sorted by coverage, then the age of relevant groceries, then cooking time. Storage age means “days since recorded storage.” It does not predict expiration or say whether food is safe to eat.
 
-## What happens when someone clicks Generate a dinner idea
+## What happens after Save preferences & generate
 
-1. The server reads that user's pantry and preferences. Names, quantities, units and storage age are included; group chats, other users' data and credentials are not.
-2. It checks for a recent saved suggestion for the same pantry and preferences. The cache lasts 15 minutes, avoiding unnecessary repeat work.
+1. The interface first saves the selected servings, diet and time, then requests generation. The server reads that user's pantry and saved preferences. Names, units and bounded usable recipe quantities are included; storage age helps order the shortlist. Group chats, other users' data and credentials are not.
+2. It checks for a recent saved suggestion for the same pantry, preferences and optional library inspiration. The cache lasts 15 minutes, avoiding unnecessary repeat work.
 3. A short per-account cooldown and an in-progress marker prevent repeated clicks from starting competing generations. The database transaction is released during the slower model call.
-4. Python shortlists up to four pantry candidates, then sends a local request to Ollama. The model is asked for one recipe in a defined JSON structure, with thinking output disabled to keep the small-model response bounded.
+4. Python shortlists up to four compatible pantry candidates, distinguishes available stock from recipe portions, then sends a local request to Ollama. An optional public recipe is reference data, not instructions. The model is asked for one recipe in a defined JSON structure, with thinking output disabled to keep the small-model response bounded.
 5. Pydantic checks the structure. Additional code rejects duplicate or unlisted ingredient names, mismatched servings, cooking-time violations, missing dietary tags, recipes below 80% quantity-aware coverage, excessive oil portions, and dry-starch recipes without a cooking step. These are limited sanity checks, not a complete cooking-safety system.
-6. Only a valid result is saved as a private generated recipe. The interface labels it as locally generated and shows an illustration, not an AI-created food photo.
+6. Only a valid result is saved as a private generated recipe. The interface labels it with its generation preferences and shows an illustration. **Your AI ideas** contains exact current-pantry/preference results; compatible older ones remain in **Saved AI**. Adaptations also retain a source link.
 
 The generated recipe can use the same request and cooking flows as the curated recipes. Inventory changes only after explicit exchange/cooking actions. If the model is unavailable or its output fails checks, the app explains the problem and the curated recipes remain usable.
 
 Structured output is a format constraint, not a guarantee of a good recipe. The code checks quantities and format; it cannot prove that a dish will taste good, that a dietary label covers every brand-specific ingredient, or that a suggested meal is safe for a person's allergies. Small local models can make mistakes and may be slow.
+
+## How the free recipe API fits
+
+`GET /api/recipes/library/search` accepts one ingredient or a meal name. The backend calls fixed HTTPS TheMealDB V1 endpoints using public educational key 1. `GET /api/recipes/library/{id}` retrieves original ingredients, measures and method. Search returns at most 12 recipes; a bounded in-memory cache lasts 15 minutes. Requests have a 12-second timeout and do not follow redirects. Images and external links are limited to the provider's expected hosts/routes; the Electron renderer remains isolated.
+
+Only search terms or recipe IDs leave the app through the backend. Recipe images load directly from TheMealDB. Pantry amounts, preferences, identities and chats are not sent. The public provider requires internet; local AI inference stays on the computer.
+
+The provider lacks verified servings and cooking time in these records. We show raw measures and avoid assigning invented pantry coverage or direct inventory deductions. **Set preferences & adapt** passes the recipe ID to generation; Python retrieves the source, and Qwen creates a new, separately validated recipe. This is inspiration, not a faithful scaled copy. Full ingredient/measure normalization remains future work.
+
+The [public test key is for development/education](https://www.themealdb.com/api.php). Public app-store release requires supporter access. We use no premium multi-ingredient search or paid plan.
 
 ## How sharing stays consistent
 
@@ -100,7 +111,7 @@ The free local-AI version does not load or use an OpenAI API key and makes no Op
 
 | Status | Features |
 | --- | --- |
-| Implemented locally | Pantry CRUD, quantity/unit matching, serving and preference filters, private communities, friend invites, timed requests, reservations, pickup/group chat, confirmed exchange/cooking, and local AI generation with validation/cache |
+| Implemented locally | Pantry CRUD, quantity/unit matching, serving and preference filters, private communities, friend invites, timed requests, reservations, pickup/group chat, confirmed exchange/cooking, preferences-first local AI generation with validation/cache, TheMealDB library and source-linked adaptations |
 | Seeded or illustrative | Alex/Jamie/Sam, initial groceries/messages, four curated recipes, vector food illustrations, and an editable sample receipt |
 | Future work | Real receipt-image extraction, production identity, external morning notifications, location/contact discovery, shared calendars and public deployment |
 | Not measured | Dollars saved and pounds of food waste prevented. Current activity counts meals and confirmed shares only |
@@ -151,6 +162,8 @@ We use focused API tests for persistence, privacy, quantities, deadlines, compet
 | `backend/main.py` | API routes, access rules and inventory operations |
 | `backend/models.py` | Database records and relationships |
 | `backend/recipes.py` | Curated recipe data, unit conversion and coverage math |
+| `backend/recipe_library.py` | Free TheMealDB calls, response checks and cache |
+| `frontend/src/RecipeLibrary.jsx` | Recipe search/detail and adaptation entry point |
 | `backend/local_ai.py` | Local model request, output validation and error messages |
 | `backend/migrations.py` | Additive database schema upgrade |
 | `backend/test_api.py` | Behavioral checks |
@@ -166,9 +179,8 @@ We use focused API tests for persistence, privacy, quantities, deadlines, compet
 
 ## Verified for this update
 
-- 15 focused API tests passed.
-- Vite production build passed.
-- A real local `qwen3:4b` request produced “Simple Pasta and Spinach”; the backend calculated 100% coverage from actual pantry quantities. No cloud API was used.
-- The browser generation button loaded the saved local result and switched to the Local AI tab.
-- Desktop and 390-pixel mobile layouts checked, with no horizontal overflow or browser console errors in the checked view.
-- The app, identity and database remain a local prototype; receipt-image extraction and production sign-in are still future work.
+- 24 focused API tests passed, including preference/pantry changes, library errors/cache, private generated history and inspiration attribution.
+- The React production build and Electron source checks passed.
+- Live TheMealDB ingredient/name search and original details worked. In the phone interface, Qwen3 4B generated a 2-serving vegan pasta adaptation with attribution, then a distinct 1-serving gluten-free salad after changing preferences to 10 minutes. Both passed validation with 100% pantry coverage; pantry quantities were unchanged.
+- The checked 402-pixel view had no horizontal overflow or console errors. The Mac launcher was rebuilt. Mock tests do not guarantee future external availability or model quality.
+- Identity, database and installer remain a local prototype. Real receipt extraction and production sign-in are future work.

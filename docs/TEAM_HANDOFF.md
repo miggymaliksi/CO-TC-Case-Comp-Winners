@@ -40,7 +40,7 @@ flowchart LR
 | SQLAlchemy / SQLite | Defines and saves users, groceries, requests, messages and other records | `backend/models.py`, `backend/migrations.py`, local `savor.db` |
 | Ollama / Qwen3 4B | Runs a pretrained model locally; proposes structured recipes | `backend/local_ai.py`, `local_ai_runtime.py` |
 
-For **Generate a dinner idea**, Python reads the current account's pantry and preferences, checks for a matching saved suggestion, then calls the local model if needed. It validates structure, servings, ingredients and coverage before saving a private result. Failed generation does not change inventory. No paid AI API is used. We integrated a pretrained model; we did not train one. Format and quantity checks do not guarantee recipe quality.
+For **Save preferences & generate**, the interface first saves servings, diet and time. Python then reads the current account's pantry and preferences, checks for a matching saved suggestion, then calls the local model if needed. It validates structure, servings, ingredients and coverage before saving a private result. Failed generation does not change inventory. No paid AI API is used. We integrated a pretrained model; we did not train one. Format and quantity checks do not guarantee recipe quality.
 
 ## How a teammate runs it
 
@@ -74,3 +74,7 @@ The Git repository includes source, dependency lockfiles and documentation. It e
 This is a **Mac app with a phone-style interface**, using local sample accounts and SQLite. Production sign-in, a shared hosted backend, a real iPhone/Android package, live receipt-image extraction and external notifications are future work. Storage age is not an expiration or food-safety prediction. The interface's impact counts are recorded actions, not measured money or food-waste savings.
 
 For detailed questions about transactions, duplicate protection, access checks and AI validation, use [TECHNICAL_RUNDOWN.md](TECHNICAL_RUNDOWN.md).
+
+## Recipe library and AI adaptation
+
+TheMealDB's public educational API is connected without a paid account. **Recipes → Recipe library** supports single-ingredient/name search, original details and attribution. Original measures are unverified for servings and pantry conversion. **Set preferences & adapt** creates a separate local AI suggestion that must pass the existing checks before cooking. Preference/pantry changes remove earlier ideas from **Your AI ideas** while compatible history remains under **Saved AI**. Coordinate edits to `App.jsx`, `components.jsx`, `backend/main.py`, `local_ai.py` and `recipe_library.py` before merging. No schema or dependency change was needed for this addition.

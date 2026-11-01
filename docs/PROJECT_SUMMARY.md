@@ -4,7 +4,7 @@
 
 Savor helps people use groceries they already have, find meals that fit those groceries, and request small missing amounts from private communities or friends. The main workflow is:
 
-**Pantry → recipe match → missing ingredient request → neighbor accepts → confirmed pickup → cooking record.**
+**Pantry → choose servings, diet and cooking time → AI meal idea → cook or request missing ingredients → confirmed pickup → cooking record.** You can also browse TheMealDB and ask local AI to adapt a recipe to your settings and pantry.
 
 The current deliverable is a **Mac desktop demo with a phone-style interface**, using the team's original slide-deck logo. It runs locally with three sample accounts: Alex, Jamie and Sam. The source is on **feat/savor-demo**, proposed in [draft PR #1](https://github.com/miggymaliksi/CO-TC-Case-Comp-Winners/pull/1). A teammate reviews before merging into main.
 
@@ -28,9 +28,9 @@ The task and command were checked against the current launcher. A local edit tha
 | **Electron** | Mac window, Dock icon and local-service lifecycle | It wraps the interface in a desktop application, opens a phone-width window, and starts the Python backend. |
 | **React** | Screens, forms, navigation and updates | It controls what users see and sends their actions to the backend. |
 | **Vite** | Interface development and build tool | It converts the React code, styles and images into files the app can load. |
-| **FastAPI / Python** | API routes and business rules | It validates input, checks account access, calculates recipe coverage, and controls requests, reservations and cooking. |
+| **FastAPI / Python** | API routes and business rules | It validates input, checks account access, fetches TheMealDB recipes, calculates coverage, and controls requests, reservations and cooking. |
 | **SQLite / SQLAlchemy** | Persistent records and their relationships | SQLite stores the database in a local file. SQLAlchemy lets Python work with database records as models. |
-| **Ollama / Qwen3 4B** | Optional local recipe generation | Ollama runs the downloaded Qwen model on the computer. Qwen proposes recipes, and Python validates the output. |
+| **Ollama / Qwen3 4B** | Personalized local recipe generation | Ollama runs the downloaded Qwen model. Qwen proposes meals for the selected preferences and pantry, optionally inspired by a library recipe; Python validates the output. |
 | **Git / GitHub** | Version history and team review | Each contributor works in their own checkout and feature branch, pushes changes, and opens a PR for teammate review. |
 
 ```mermaid
@@ -40,6 +40,7 @@ flowchart LR
     R <-->|Local JSON requests| P[FastAPI / Python]
     P <--> D[(SQLite database)]
     P <-->|Recipe proposal and validation| A[Ollama / Qwen3]
+    P <-->|Public recipe search and lookup| T[TheMealDB free educational API]
 ```
 
 ### Follow one Save button click
@@ -68,22 +69,23 @@ Chat is implemented using polling: open chats refresh every four seconds, and ge
 
 ## What the AI actually does
 
-Savor currently has two recipe sources:
+Savor now combines three recipe sources:
 
 - **Four curated sample recipes**, stored in `backend/recipes.py`.
-- **Model-generated suggestions**, proposed by Qwen using patterns learned during training and the pantry/preferences supplied by our backend.
+- **TheMealDB recipes**, fetched from its free educational API with original ingredient measures, photos, instructions and a source link.
+- **Model-generated suggestions**, proposed by Qwen from the pantry and selected preferences, optionally using a library recipe as inspiration.
 
-The current app does not search recipe websites or query a recipe database API. A generated suggestion does not have a traceable cookbook or website source. We integrated a pretrained model; we did not train a model or build a recipe training dataset.
+The library searches a recipe database API, rather than scraping websites. An AI adaptation links its inspiration source, but it is a new suggestion, not the publisher's original recipe. A pantry-only generated suggestion has no traceable cookbook source. We integrated a pretrained model; we did not train one.
 
-When the user clicks **Generate a dinner idea**:
+When the user clicks **Set preferences & generate**:
 
-1. Python reads that account's pantry and preferences and checks for a matching saved result.
-2. It shortlists pantry ingredients and sends the model a local request for one structured recipe. Chats and user identities are not included in the recipe prompt.
+1. Choose servings, dietary preference and maximum cooking time, then click **Save preferences & generate**. The app saves those settings before requesting a meal idea.
+2. Python checks for a recent matching result, shortlists compatible pantry ingredients and sends a local request for one structured recipe. An adaptation also includes public recipe inspiration. Chats and user identities are excluded.
 3. The model proposes a name, servings, quantities and cooking steps.
 4. Python validates the structure and performs quantity, ingredient, time, preference and coverage checks.
-5. A valid result is saved privately and displayed under **Local AI**. A failed generation does not change inventory.
+5. A valid result is saved privately under **Your AI ideas**, labeled with the preferences used. Changing preferences or pantry moves older results out of that current view; compatible older results remain in **Saved AI**. A failed generation keeps the saved preferences and leaves inventory unchanged.
 
-Matching suggestions can be reused for **15 minutes** when pantry and preferences are unchanged. The downloaded model is about **2.5 GB**. Local generation has no per-request API fee, but uses memory, processing power and time. It can take a minute or two and can fail validation. Validation does not guarantee taste, recipe quality or brand-specific dietary suitability.
+Matching suggestions can be reused for **15 minutes** when pantry, preferences and selected inspiration are unchanged. The model download is about **2.5 GB**. Generation has no API fee, but uses memory and processing time; it can take a minute or two or fail validation. Checks do not guarantee taste, recipe quality or brand-specific dietary suitability.
 
 **The AI suggests recipes. Python controls recipe coverage, permissions, sharing and inventory changes.**
 
@@ -93,7 +95,7 @@ Matching suggestions can be reused for **15 minutes** when pantry and preference
 | --- | --- |
 | App presentation | Phone-style Mac window, bottom navigation, responsive screens and the original team logo |
 | Pantry | Add, edit and remove groceries; quantities, units, storage dates and locations; persistent records |
-| Recipes | Four curated examples, optional local AI suggestions, servings/preferences/time filters and quantity-aware coverage |
+| Recipes | Preferences-first local AI, TheMealDB search/detail/source links, AI adaptations, four curated examples and quantity-aware coverage |
 | Sharing | Exact-amount requests to private communities or sample friends, deadlines, accept/pass/cancel and reservations |
 | Pickup | Private coordination chat and confirmed, repeat-safe inventory transfer |
 | Communities and friends | Private groups, invite-code joining, sample friend connections and community chat |
@@ -101,7 +103,7 @@ Matching suggestions can be reused for **15 minutes** when pantry and preference
 | Receipt demo | Editable sample receipt and atomic import into the pantry |
 | Engineering | Server validation/access checks, persistence, additive schema migration, duplicate protection, focused API tests and GitHub review workflow |
 
-The initial accounts, groceries, messages and four curated dishes are sample content. Food artwork is illustrative. Generated recipes are labeled. Impact displays recorded actions; it does not calculate measured food-weight reduction or dollar savings.
+The initial accounts, groceries, messages and four curated dishes are sample content. Curated/generated food artwork is illustrative; library photos come from TheMealDB. Generated recipes and adaptations are labeled. Impact counts recorded actions, not measured food-weight reduction or dollar savings.
 
 ## Features still missing
 
@@ -115,7 +117,7 @@ The initial accounts, groceries, messages and four curated dishes are sample con
 
 ### Product integrations and improvements
 
-- **Recipe API integration** for a larger external catalog and source attribution where provided.
+- **Automatic quantity/unit and serving normalization for library recipes**. Original API records are browseable; an AI adaptation must pass Savor's checks before it enters the cooking/inventory workflow.
 - **Live receipt extraction** from actual images; the current receipt screen uses an editable sample.
 - **Scheduled morning messages and external push notifications**; current updates appear while the local app is open.
 - Contacts/proximity discovery, shared-calendar features, games and prizes if retained in the team's roadmap.
@@ -124,22 +126,22 @@ The initial accounts, groceries, messages and four curated dishes are sample con
 
 Expiration predictions, food-safety classifications, payments, buying/selling, deliveries and a public social feed are intentionally outside the current scope. Storage age means days since recorded storage, not an expiry prediction. The team's 9,000-request figure is an aspiration, not achieved usage.
 
-## Should we add a recipe API?
+## Free recipe API and its limits
 
-**Recommendation: add a recipe API in the next version, after the current demo.** Use it for catalog recipes with provider/source information, and keep local AI as an optional source of custom suggestions.
+**TheMealDB is now connected for this educational demo.** Open **Recipes → Recipe library**, search by one ingredient or a meal name, and open a recipe. **Set preferences & adapt** asks local AI to make a new version using your pantry and chosen settings.
 
-The basic HTTP lookup would fit in the Python backend. The more substantial work is mapping ingredient names, parsing quantities and units, scaling servings, storing source information, handling API limits and failures, and reusing our own coverage checks. Preserve cached examples for reliable demonstrations. An API response alone does not guarantee that its ingredient quantities are comparable with our pantry units.
+The Python backend calls fixed TheMealDB endpoints, limits results to 12 and caches responses for 15 minutes. Searches require internet. Only the search term or recipe ID goes to the provider; pantry quantities, dietary settings, identities and chats are not sent. Recipe photos load from TheMealDB. Local AI inference stays on the computer.
 
-Two options checked in official documentation:
+Important limits:
 
-- [TheMealDB](https://www.themealdb.com/api.php) allows its test key for development or educational use. Public app-store release requires supporter access; multi-ingredient filtering is premium. It could support a small educational integration, while Savor still performs its own pantry matching.
-- [Spoonacular](https://spoonacular.com/food-api/docs) documents ingredient-based recipe search and structured ingredient amounts/units. Its current account requirements, quotas, terms and cost would need review before choosing it.
+- [TheMealDB](https://www.themealdb.com/api.php) allows public test key **1** for development/education, with no paid account. Public app-store release requires supporter access, and multi-ingredient filtering is premium. This version uses free single-ingredient/name search and ID lookup only.
+- The provider does not supply reliable serving counts or cooking time in these results. Original measures such as “1 tin” remain unchanged. We do not assign fake pantry coverage, scale them or deduct them directly. AI adaptations have separate quantities and checks.
 
-No recipe API has been connected, no account has been created for one, and no paid plan has been enabled.
+No paid plan, private API key or cloud AI account is needed. The library can be unavailable; saved ideas, curated examples and local pantry features remain available.
 
 ## Two-minute mock demo
 
-Prepare Home as **Alex**, with **2 servings**. Check that Sunday tomato pasta shows **80% with garlic missing** and that a saved generated recipe is available under Local AI. Practice changes persist, so recheck before each rehearsal.
+Before the timer, generate an idea for Alex with **2 servings**, your chosen diet and time. Keep pantry/preferences unchanged so it stays in **Your AI ideas**. Check the library while online. Fresh generation can take most of the demo slot; show a saved result honestly. Practice changes persist.
 
 Aim for **1:40**, keeping **20 seconds for slower clicks**.
 
@@ -147,16 +149,16 @@ Aim for **1:40**, keeping **20 seconds for slower clicks**.
 | --- | --- | --- |
 | **0:00–0:10** | Home | “Savor helps you cook with what you have and borrow the small ingredients you're missing.” |
 | **0:10–0:25** | Pantry; point to an amount and storage age | “Here's Alex's pantry. We track amounts and storage dates, and these records stay saved after closing the app.” |
-| **0:25–0:55** | Recipes → All ideas → Sunday tomato pasta → garlic's Ask. Check 1 clove, Community · PBL, In 30 minutes → Send request. | “This pasta matches four of five ingredients. Garlic is missing, so it shows 80%. I can ask my community for just one clove.” |
-| **0:55–1:10** | Community → Requests; show the new request | “The request is now in Alex's community. A neighbor can accept it, and confirmed pickup updates both pantries.” |
-| **1:10–1:30** | Recipes → Local AI; open a saved generated recipe | “This recipe was generated earlier on this computer from the pantry. We use a local AI model without paid API calls, and our code checks the result before showing it.” |
+| **0:25–0:45** | Recipes → Set preferences & generate; show the controls, then close the dialog | “I choose servings, diet and time. Saving these preferences asks AI to create a meal using this pantry.” |
+| **0:45–1:10** | Your AI ideas → open the prepared result, show its preference label and coverage | “I generated this earlier on this computer. Python checked the quantities and preferences. The model suggests a meal; it cannot change our groceries.” |
+| **1:10–1:30** | Close result → Recipe library → open a recipe | “We also search TheMealDB for real recipes with sources. Set preferences and adapt makes a new pantry-based version. Missing ingredients can be requested through our community flow.” |
 | **1:30–1:40** | Keep the recipe visible | “That's Savor: turn what you already have into a meal, with a little help from your community.” |
 
-If behind at 1:30, give the closing sentence from the current screen. Keep fresh AI generation, account switching, pickup/cooking and deeper technical explanations for Q&A.
+If behind at 1:30, close from the current screen. Keep fresh generation, account switching and the complete request/pickup/cooking flow for Q&A. If the library is offline, use the saved AI result and explain the external search needs internet.
 
 ## Questions to be ready for
 
-- **Where are the recipes from?** Four curated samples plus suggestions generated by a pretrained local model. External recipe search is a future integration.
+- **Where are the recipes from?** Four curated samples, original recipes from TheMealDB, and suggestions generated by Qwen. Adaptations link their inspiration and are labeled separately from the original.
 - **What did we build ourselves?** The interface, pantry and request flows, quantity matching, inventory rules, database connections and model integration/validation.
 - **Did we train AI?** No; we integrated Qwen through Ollama.
 - **Is it free to use AI?** This local version has no paid API calls. The costs are local disk space, memory, processing and time.
@@ -167,7 +169,7 @@ If behind at 1:30, give the closing sentence from the current screen. Keep fresh
 
 ## Useful code and guides
 
-Start with `frontend/src/App.jsx` for screens, `components.jsx` for forms, `backend/main.py` for API/business rules, `backend/recipes.py` for matching, `backend/local_ai.py` for AI, and `backend/models.py` for records. `run.py`, `.vscode/tasks.json` and `desktop/main.cjs` control launching.
+Start with `frontend/src/App.jsx` for screens, `components.jsx` for forms, `RecipeLibrary.jsx` for browsing, `backend/main.py` for routes/business rules, `backend/recipe_library.py` for TheMealDB, `backend/recipes.py` for matching, `backend/local_ai.py` for AI, and `backend/models.py` for records. `run.py`, `.vscode/tasks.json` and `desktop/main.cjs` control launching.
 
 - [Run and present: beginner steps and script](RUN_AND_PRESENT.md)
 - [Detailed technical rundown](TECHNICAL_RUNDOWN.md)
